@@ -9,22 +9,33 @@ import App from "./App.tsx";
 import "./index.css";
 import { Toaster } from "./components/ui/toaster";
 
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
+// Initialize Convex client with the URL from environment variables
+const convexUrl = import.meta.env.VITE_CONVEX_URL;
+if (!convexUrl) {
+  console.warn("VITE_CONVEX_URL is not set. Using fallback URL.");
+}
 
-TempoDevtools.init();
+const convex = new ConvexReactClient(convexUrl as string);
 
-const basename = import.meta.env.BASE_URL;
+// Initialize Tempo Devtools if in development mode
+if (import.meta.env.DEV) {
+  TempoDevtools.init();
+}
 
-// Import your P Key
+const basename = import.meta.env.BASE_URL || "/";
+
+// Get Clerk publishable key from environment variables
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 if (!PUBLISHABLE_KEY) {
-  throw new Error("Missing Publishable Key");
+  console.warn(
+    "VITE_CLERK_PUBLISHABLE_KEY is not set. Authentication may not work properly.",
+  );
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY || ""} afterSignOutUrl="/">
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         <BrowserRouter basename={basename}>
           <App />
