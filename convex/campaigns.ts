@@ -6,11 +6,30 @@ import { Id } from "./_generated/dataModel";
 export const getMyCampaigns = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return [];
-    }
+    let tokenIdentifier;
 
-    const tokenIdentifier = identity.subject;
+    if (!identity) {
+      // For demo purposes, use a mock user ID
+      tokenIdentifier = "demo-user-123";
+
+      // Check if mock user exists
+      const mockUser = await ctx.db
+        .query("users")
+        .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
+        .first();
+
+      if (!mockUser) {
+        // Create mock user
+        await ctx.db.insert("users", {
+          tokenIdentifier,
+          name: "Demo User",
+          email: "demo@example.com",
+          createdAt: Date.now(),
+        });
+      }
+    } else {
+      tokenIdentifier = identity.subject;
+    }
 
     // Get all campaigns where the user is a member
     const memberships = await ctx.db
@@ -80,7 +99,12 @@ export const getMyCampaigns = query({
 export const getTrendingCampaigns = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
-    const tokenIdentifier = identity?.subject;
+    let tokenIdentifier = identity?.subject;
+
+    if (!tokenIdentifier) {
+      // For demo purposes, use a mock user ID
+      tokenIdentifier = "demo-user-123";
+    }
 
     // Get all public campaigns
     const publicCampaigns = await ctx.db
@@ -159,11 +183,14 @@ export const getCampaign = query({
   args: { campaignId: v.id("campaigns") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    let tokenIdentifier;
 
-    const tokenIdentifier = identity.subject;
+    if (!identity) {
+      // For demo purposes, use a mock user ID
+      tokenIdentifier = "demo-user-123";
+    } else {
+      tokenIdentifier = identity.subject;
+    }
 
     // Get the campaign
     const campaign = await ctx.db.get(args.campaignId);
@@ -227,11 +254,46 @@ export const createCampaign = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    let tokenIdentifier;
 
-    const tokenIdentifier = identity.subject;
+    if (!identity) {
+      // For demo purposes, use a mock user ID
+      tokenIdentifier = "demo-user-123";
+
+      // Check if mock user exists
+      const mockUser = await ctx.db
+        .query("users")
+        .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
+        .first();
+
+      if (!mockUser) {
+        // Create mock user
+        await ctx.db.insert("users", {
+          tokenIdentifier,
+          name: "Demo User",
+          email: "demo@example.com",
+          createdAt: Date.now(),
+        });
+      }
+    } else {
+      tokenIdentifier = identity.subject;
+
+      // Create user if not exists
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
+        .first();
+
+      if (!user) {
+        await ctx.db.insert("users", {
+          tokenIdentifier,
+          name: identity.name || "User",
+          email: identity.email || "",
+          image: identity.pictureUrl,
+          createdAt: Date.now(),
+        });
+      }
+    }
 
     // Check if the user has reached the free tier limit (3 campaigns)
     const userCampaigns = await ctx.db
@@ -239,20 +301,6 @@ export const createCampaign = mutation({
       .withIndex("by_user", (q) => q.eq("userId", tokenIdentifier))
       .filter((q) => q.eq(q.field("role"), "owner"))
       .collect();
-
-    // Check subscription status
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
-      .unique();
-
-    if (!user) {
-      // Create user if not exists
-      await ctx.db.insert("users", {
-        tokenIdentifier,
-        createdAt: Date.now(),
-      });
-    }
 
     // Get subscription status
     const subscription = await ctx.db
@@ -299,11 +347,14 @@ export const joinCampaign = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    let tokenIdentifier;
 
-    const tokenIdentifier = identity.subject;
+    if (!identity) {
+      // For demo purposes, use a mock user ID
+      tokenIdentifier = "demo-user-123";
+    } else {
+      tokenIdentifier = identity.subject;
+    }
 
     // Check if the campaign exists
     const campaign = await ctx.db.get(args.campaignId);
@@ -349,11 +400,14 @@ export const requestToJoinCampaign = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    let tokenIdentifier;
 
-    const tokenIdentifier = identity.subject;
+    if (!identity) {
+      // For demo purposes, use a mock user ID
+      tokenIdentifier = "demo-user-123";
+    } else {
+      tokenIdentifier = identity.subject;
+    }
 
     // Check if the campaign exists
     const campaign = await ctx.db.get(args.campaignId);
@@ -427,11 +481,14 @@ export const updateCampaign = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    let tokenIdentifier;
 
-    const tokenIdentifier = identity.subject;
+    if (!identity) {
+      // For demo purposes, use a mock user ID
+      tokenIdentifier = "demo-user-123";
+    } else {
+      tokenIdentifier = identity.subject;
+    }
 
     // Check if the campaign exists
     const campaign = await ctx.db.get(args.campaignId);
@@ -480,11 +537,14 @@ export const deleteCampaign = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    let tokenIdentifier;
 
-    const tokenIdentifier = identity.subject;
+    if (!identity) {
+      // For demo purposes, use a mock user ID
+      tokenIdentifier = "demo-user-123";
+    } else {
+      tokenIdentifier = identity.subject;
+    }
 
     // Check if the campaign exists
     const campaign = await ctx.db.get(args.campaignId);

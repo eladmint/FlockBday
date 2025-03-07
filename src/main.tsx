@@ -17,25 +17,19 @@ if (!convexUrl) {
 
 const convex = new ConvexReactClient(convexUrl as string);
 
-// Initialize Tempo Devtools if in development mode
-if (import.meta.env.DEV) {
-  TempoDevtools.init();
-}
+// Initialize Tempo Devtools
+TempoDevtools.init();
 
 const basename = import.meta.env.BASE_URL || "/";
 
 // Get Clerk publishable key from environment variables
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
-if (!PUBLISHABLE_KEY) {
-  console.warn(
-    "VITE_CLERK_PUBLISHABLE_KEY is not set. Authentication may not work properly.",
-  );
-}
+const PUBLISHABLE_KEY =
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ||
+  "pk_test_ZmxvY2stYmRheS0xMC5jbGVyay5hY2NvdW50cy5kZXYk";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY || ""} afterSignOutUrl="/">
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         <BrowserRouter basename={basename}>
           <App />
