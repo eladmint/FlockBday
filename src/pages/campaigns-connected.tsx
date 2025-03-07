@@ -43,6 +43,17 @@ export default function CampaignDashboard() {
     e.preventDefault();
     try {
       setIsCreating(true);
+      // Ensure we have valid data
+      if (!formData.title || !formData.description) {
+        toast({
+          title: "Error",
+          description: "Title and description are required",
+          variant: "destructive",
+        });
+        setIsCreating(false);
+        return;
+      }
+
       // Create the campaign using the hook
       await createCampaign({
         title: formData.title,
