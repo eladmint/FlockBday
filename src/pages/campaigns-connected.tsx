@@ -21,6 +21,8 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { useUser } from "@clerk/clerk-react";
 import { PlusCircle } from "lucide-react";
 import { useCampaigns } from "@/hooks/useCampaigns";
+import { useMutation, useAction } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export default function CampaignDashboard() {
   const { isLoaded: isUserLoaded } = useUser();

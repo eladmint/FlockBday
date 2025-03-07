@@ -257,42 +257,27 @@ export const createCampaign = mutation({
     let tokenIdentifier;
 
     if (!identity) {
-      // For demo purposes, use a mock user ID
+      // For demo purposes, always use a mock user ID
       tokenIdentifier = "demo-user-123";
-
-      // Check if mock user exists
-      const mockUser = await ctx.db
-        .query("users")
-        .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
-        .first();
-
-      if (!mockUser) {
-        // Create mock user
-        await ctx.db.insert("users", {
-          tokenIdentifier,
-          name: "Demo User",
-          email: "demo@example.com",
-          createdAt: Date.now(),
-        });
-      }
     } else {
       tokenIdentifier = identity.subject;
+    }
 
+    // Always ensure the user exists in the database
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
+      .first();
+
+    if (!existingUser) {
       // Create user if not exists
-      const user = await ctx.db
-        .query("users")
-        .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
-        .first();
-
-      if (!user) {
-        await ctx.db.insert("users", {
-          tokenIdentifier,
-          name: identity.name || "User",
-          email: identity.email || "",
-          image: identity.pictureUrl,
-          createdAt: Date.now(),
-        });
-      }
+      await ctx.db.insert("users", {
+        tokenIdentifier,
+        name: identity?.name || "Demo User",
+        email: identity?.email || "demo@example.com",
+        image: identity?.pictureUrl,
+        createdAt: Date.now(),
+      });
     }
 
     // Check if the user has reached the free tier limit (3 campaigns)

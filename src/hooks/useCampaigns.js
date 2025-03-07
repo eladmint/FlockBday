@@ -1,9 +1,9 @@
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
-import { Campaign } from "@/types/campaign";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
+// Import Id as a type reference only
+// No direct import needed in JS file
 
 export function useCampaigns() {
   const { toast } = useToast();
@@ -21,18 +21,13 @@ export function useCampaigns() {
   );
 
   // Create a new campaign
-  const createCampaign = async (data: {
-    title: string;
-    description: string;
-    visibility: string;
-  }) => {
+  const createCampaign = async (data) => {
     try {
       // Call the Convex mutation to create a campaign
-      // Force a string conversion to avoid type issues
       const campaignId = await createCampaignMutation({
-        title: String(data.title),
-        description: String(data.description),
-        visibility: String(data.visibility),
+        title: data.title,
+        description: data.description,
+        visibility: data.visibility,
       });
 
       toast({
@@ -53,11 +48,11 @@ export function useCampaigns() {
   };
 
   // Join a public campaign
-  const joinCampaign = async (campaignId: string) => {
+  const joinCampaign = async (campaignId) => {
     try {
       // Call the Convex mutation to join a campaign
       await joinCampaignMutation({
-        campaignId: campaignId as Id<"campaigns">,
+        campaignId: campaignId,
       });
 
       toast({
@@ -77,11 +72,11 @@ export function useCampaigns() {
   };
 
   // Request to join a private campaign
-  const requestToJoinCampaign = async (campaignId: string) => {
+  const requestToJoinCampaign = async (campaignId) => {
     try {
       // Call the Convex mutation to request to join a campaign
       await requestToJoinCampaignMutation({
-        campaignId: campaignId as Id<"campaigns">,
+        campaignId: campaignId,
         message: "I would like to join your campaign",
       });
 
