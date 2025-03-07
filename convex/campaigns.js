@@ -4,6 +4,32 @@ import { mutation, query } from "./_generated/server";
 // Get all campaigns for the current user (owned or collaborated)
 export const getMyCampaigns = query({
   handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    let tokenIdentifier;
+
+    if (!identity) {
+      // For demo purposes, use a mock user ID
+      tokenIdentifier = "demo-user-123";
+
+      // Check if mock user exists
+      const mockUser = await ctx.db
+        .query("users")
+        .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
+        .first();
+
+      if (!mockUser) {
+        // Create mock user
+        await ctx.db.insert("users", {
+          tokenIdentifier,
+          name: "Demo User",
+          email: "demo@example.com",
+          createdAt: Date.now(),
+        });
+      }
+    } else {
+      tokenIdentifier = identity.subject;
+    }
+
     return [];
   },
 });
@@ -24,25 +50,45 @@ export const createCampaign = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
+    let tokenIdentifier;
+
     if (!identity) {
-      throw new Error("Not authenticated");
-    }
+      // For demo purposes, use a mock user ID
+      tokenIdentifier = "demo-user-123";
 
-    const tokenIdentifier = identity.subject;
+      // Check if mock user exists
+      const mockUser = await ctx.db
+        .query("users")
+        .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
+        .first();
 
-    // Create a simple user if needed
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
-      .first();
+      if (!mockUser) {
+        // Create mock user
+        await ctx.db.insert("users", {
+          tokenIdentifier,
+          name: "Demo User",
+          email: "demo@example.com",
+          createdAt: Date.now(),
+        });
+      }
+    } else {
+      tokenIdentifier = identity.subject;
 
-    if (!user) {
-      await ctx.db.insert("users", {
-        tokenIdentifier,
-        name: identity.name || "User",
-        email: identity.email || "",
-        createdAt: Date.now(),
-      });
+      // Create user if not exists
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
+        .first();
+
+      if (!user) {
+        await ctx.db.insert("users", {
+          tokenIdentifier,
+          name: identity.name || "User",
+          email: identity.email || "",
+          image: identity.pictureUrl,
+          createdAt: Date.now(),
+        });
+      }
     }
 
     // Create the campaign
