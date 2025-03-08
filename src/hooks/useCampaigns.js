@@ -23,6 +23,12 @@ export function useCampaigns() {
   // Create a new campaign
   const createCampaign = async (data) => {
     try {
+      // Add a small delay to ensure user is created first
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Log the data being sent
+      console.log("Creating campaign with data:", data);
+
       // Call the Convex mutation to create a campaign
       const campaignId = await createCampaignMutation({
         title: data.title,

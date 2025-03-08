@@ -21,13 +21,15 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { useUser } from "@clerk/clerk-react";
 import { PlusCircle } from "lucide-react";
 import { useCampaigns } from "@/hooks/useCampaigns";
-import { useMutation, useAction } from "convex/react";
+import { useMutation, useAction, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
 export default function CampaignDashboard() {
   const { isLoaded: isUserLoaded } = useUser();
   const { myCampaigns, trendingCampaigns, isLoading, createCampaign } =
     useCampaigns();
+
+  // We don't need to query for the current user since it's handled in the useCampaigns hook
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -38,6 +40,8 @@ export default function CampaignDashboard() {
   });
 
   const { toast } = useToast();
+
+  const createDemoUserMutation = useMutation(api.createUser.createDemoUser);
 
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +58,13 @@ export default function CampaignDashboard() {
         return;
       }
 
+      // First create the demo user to ensure it exists
+      console.log("Creating demo user first...");
+      const userResult = await createDemoUserMutation();
+      console.log("User creation result:", userResult);
+
       // Create the campaign using the hook
+      console.log("Now creating campaign...");
       await createCampaign({
         title: formData.title,
         description: formData.description,

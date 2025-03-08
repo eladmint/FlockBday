@@ -188,17 +188,31 @@ export const createCampaign = mutation({
     // Always use a mock user ID for demo purposes
     const tokenIdentifier = "demo-user-123";
 
-    // Create mock user first - don't check if it exists
-    try {
-      await ctx.db.insert("users", {
-        tokenIdentifier,
-        name: "Demo User",
-        email: "demo@example.com",
-        createdAt: Date.now(),
-      });
-    } catch (error) {
-      // Ignore duplicate key errors
-      console.log("User already exists or error creating user", error);
+    // First check if the user exists
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
+      .first();
+
+    // If user doesn't exist, create it
+    if (!existingUser) {
+      try {
+        const userId = await ctx.db.insert("users", {
+          tokenIdentifier,
+          name: "Demo User",
+          email: "demo@example.com",
+          createdAt: Date.now(),
+        });
+        console.log("Created new demo user for campaign creation:", userId);
+      } catch (error) {
+        console.error("Error creating user:", error);
+        throw new Error("Failed to create user before campaign creation");
+      }
+    } else {
+      console.log(
+        "Using existing user for campaign creation:",
+        existingUser._id,
+      );
     }
 
     // Create the campaign
