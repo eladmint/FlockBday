@@ -27,15 +27,7 @@ export function useCampaigns() {
     visibility: string;
   }) => {
     try {
-      // Add a longer delay to ensure user is created first
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Log the data being sent
-      console.log("Creating campaign with data:", {
-        title: data.title,
-        description: data.description,
-        visibility: data.visibility,
-      });
+      console.log("Creating campaign with data:", data);
 
       // Call the Convex mutation to create a campaign
       const campaignId = await createCampaignMutation({
@@ -51,6 +43,7 @@ export function useCampaigns() {
 
       return campaignId;
     } catch (error) {
+      console.error("Campaign creation error:", error);
       toast({
         title: "Error",
         description:

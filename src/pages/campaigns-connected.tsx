@@ -21,7 +21,7 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { useUser } from "@clerk/clerk-react";
 import { PlusCircle } from "lucide-react";
 import { useCampaigns } from "@/hooks/useCampaigns";
-import { useMutation, useAction, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
 export default function CampaignDashboard() {
@@ -41,8 +41,6 @@ export default function CampaignDashboard() {
 
   const { toast } = useToast();
 
-  const createDemoUserMutation = useMutation(api.createUser.createDemoUser);
-
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -58,26 +56,35 @@ export default function CampaignDashboard() {
         return;
       }
 
-      // First create the demo user to ensure it exists
-      console.log("Creating demo user first...");
-      const userResult = await createDemoUserMutation();
-      console.log("User creation result:", userResult);
+      console.log("Creating campaign with data:", formData);
 
       // Create the campaign using the hook
-      console.log("Now creating campaign...");
       await createCampaign({
         title: formData.title,
         description: formData.description,
         visibility: formData.visibility,
       });
+
+      // Close dialog and reset form
       setIsDialogOpen(false);
       setFormData({
         title: "",
         description: "",
         visibility: "public",
       });
+
+      toast({
+        title: "Success",
+        description: "Campaign created successfully",
+      });
     } catch (error) {
-      // Error is handled by the hook
+      console.error("Campaign creation error:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to create campaign",
+        variant: "destructive",
+      });
     } finally {
       setIsCreating(false);
     }

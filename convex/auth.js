@@ -1,7 +1,7 @@
 export default {
   providers: [
     {
-      domain: "https://flock-bday.clerk.accounts.dev",
+      domain: "https://clerk.flock.center",
       applicationID: "convex",
     },
   ],
