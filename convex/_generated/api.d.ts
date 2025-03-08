@@ -16,6 +16,7 @@ import type {
 import type * as auth from "../auth.js";
 import type * as campaigns from "../campaigns.js";
 import type * as campaigns from "../campaigns.js";
+import type * as createUser from "../createUser.js";
 import type * as forms from "../forms.js";
 import type * as http from "../http.js";
 import type * as internal_ from "../internal.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   campaigns: typeof campaigns;
   campaigns: typeof campaigns;
+  createUser: typeof createUser;
   forms: typeof forms;
   http: typeof http;
   internal: typeof internal_;
