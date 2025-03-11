@@ -15,17 +15,14 @@ import type {
 } from "convex/server";
 import type * as auth from "../auth.js";
 import type * as campaigns from "../campaigns.js";
-import type * as campaigns from "../campaigns.js";
 import type * as createUser from "../createUser.js";
 import type * as forms from "../forms.js";
 import type * as http from "../http.js";
 import type * as internal_ from "../internal.js";
-import type * as joinCampaign from "../joinCampaign.js";
 import type * as posts from "../posts.js";
 import type * as subscriptions from "../subscriptions.js";
 import type * as test from "../test.js";
 import type * as twitter from "../twitter.js";
-import type * as users from "../users.js";
 import type * as users from "../users.js";
 
 /**
@@ -39,17 +36,14 @@ import type * as users from "../users.js";
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   campaigns: typeof campaigns;
-  campaigns: typeof campaigns;
   createUser: typeof createUser;
   forms: typeof forms;
   http: typeof http;
   internal: typeof internal_;
-  joinCampaign: typeof joinCampaign;
   posts: typeof posts;
   subscriptions: typeof subscriptions;
   test: typeof test;
   twitter: typeof twitter;
-  users: typeof users;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

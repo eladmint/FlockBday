@@ -1,8 +1,2 @@
-export default {
-  providers: [
-    {
-      domain: "https://clerk.flock.center",
-      applicationID: "convex",
-    },
-  ],
-};
+// Using auth.config.ts instead
+export default {};
