@@ -12,17 +12,8 @@ export const getMyCampaigns = query({
       // For demo purposes, use a mock user ID
       tokenIdentifier = "demo-user-123";
 
-      // Check if mock user exists
-      const mockUser = await ctx.db
-        .query("users")
-        .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
-        .first();
-
-      // We can't create a user in a query function, so we'll just proceed without it
-      // In a real app, we would handle this differently
-      if (!mockUser) {
-        console.log("Mock user not found, but can't create in query function");
-      }
+      // In a real app, we would create the user if it doesn't exist
+      // But we can't do that in a query function, so we'll just use the ID
     } else {
       tokenIdentifier = identity.subject;
     }
@@ -100,6 +91,7 @@ export const getTrendingCampaigns = query({
     if (!tokenIdentifier) {
       // For demo purposes, use a mock user ID
       tokenIdentifier = "demo-user-123";
+      // Note: We're just using the ID without checking if the user exists
     }
 
     // Get all public campaigns

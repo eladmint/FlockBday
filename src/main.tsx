@@ -10,12 +10,16 @@ import "./index.css";
 import { Toaster } from "./components/ui/toaster";
 
 // Initialize Convex client with the URL from environment variables
-const convexUrl = import.meta.env.VITE_CONVEX_URL;
+const convexUrl =
+  import.meta.env.VITE_CONVEX_URL || "https://eager-giraffe-724.convex.cloud";
 if (!convexUrl) {
   console.warn("VITE_CONVEX_URL is not set. Using fallback URL.");
 }
 
-const convex = new ConvexReactClient(convexUrl as string);
+const convex = new ConvexReactClient(convexUrl);
+
+// Create demo user on startup
+convex.mutation("createDemoUser:createDemoUser")().catch(console.error);
 
 // Initialize Tempo Devtools
 TempoDevtools.init();
