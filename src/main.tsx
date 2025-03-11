@@ -18,8 +18,7 @@ if (!convexUrl) {
 
 const convex = new ConvexReactClient(convexUrl);
 
-// Create demo user on startup
-convex.mutation("createDemoUser:createDemoUser")().catch(console.error);
+// We'll create the demo user when needed in the app instead of on startup
 
 // Initialize Tempo Devtools
 TempoDevtools.init();
