@@ -18,14 +18,10 @@ export const getMyCampaigns = query({
         .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
         .first();
 
+      // We can't create a user in a query function, so we'll just proceed without it
+      // In a real app, we would handle this differently
       if (!mockUser) {
-        // Create mock user
-        await ctx.db.insert("users", {
-          tokenIdentifier,
-          name: "Demo User",
-          email: "demo@example.com",
-          createdAt: Date.now(),
-        });
+        console.log("Mock user not found, but can't create in query function");
       }
     } else {
       tokenIdentifier = identity.subject;
