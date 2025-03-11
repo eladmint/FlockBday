@@ -63,6 +63,8 @@ function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/terms" element={<TermsOfUse />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        {/* Add Tempo routes before the catch-all */}
+        {import.meta.env.VITE_TEMPO && <Route path="/tempobook/*" />}
         {/* Add a catch-all route that redirects to home */}
         <Route path="*" element={<Home />} />
       </Routes>

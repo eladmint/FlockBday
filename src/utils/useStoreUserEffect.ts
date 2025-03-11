@@ -11,20 +11,33 @@ export function useStoreUserEffect() {
   // When this state is set we know the server
   // has stored the user.
   const [userId, setUserId] = useState<Id<"users"> | null>(null);
-  // Mock store user function
-  const storeUser = () => Promise.resolve("mock-user-id");
-  // Simplified effect that just sets the user ID immediately
+  // Use the actual store mutation instead of mock
+  const storeUser = useMutation(api.users.store);
+
   useEffect(() => {
     // If the user is not logged in don't do anything
     if (!isAuthenticated) {
       return;
     }
 
-    // Just set a mock user ID immediately
-    setUserId("mock-user-id");
+    // Store the user in the database
+    let cancelled = false;
+    storeUser()
+      .then((id) => {
+        if (!cancelled) {
+          setUserId(id as Id<"users">);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to store user:", error);
+      });
 
-    return () => setUserId(null);
-  }, [isAuthenticated, user?.id]);
+    return () => {
+      cancelled = true;
+      setUserId(null);
+    };
+  }, [isAuthenticated, user?.id, storeUser]);
+
   // Combine the local state with the state from context
   return {
     isLoading: isLoading || (isAuthenticated && userId === null),
