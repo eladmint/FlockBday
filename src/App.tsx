@@ -17,7 +17,7 @@ import { LoadingSpinner } from "./components/loading-spinner";
 
 function App() {
   // For Tempo routes
-  if (import.meta.env.VITE_TEMPO) {
+  if (import.meta.env.VITE_TEMPO === "true") {
     useRoutes(routes);
   }
 
@@ -64,7 +64,7 @@ function App() {
         <Route path="/terms" element={<TermsOfUse />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         {/* Add Tempo routes before the catch-all */}
-        {import.meta.env.VITE_TEMPO && <Route path="/tempobook/*" />}
+        {import.meta.env.VITE_TEMPO === "true" && <Route path="/tempobook/*" />}
         {/* Add a catch-all route that redirects to home */}
         <Route path="*" element={<Home />} />
       </Routes>
