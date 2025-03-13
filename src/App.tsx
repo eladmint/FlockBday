@@ -12,6 +12,8 @@ import CampaignDetail from "./pages/campaign-detail-connected";
 import Settings from "./pages/settings";
 import TermsOfUse from "./pages/terms";
 import PrivacyPolicy from "./pages/privacy";
+import SignInPage from "./pages/sign-in";
+import SignUpPage from "./pages/sign-up";
 import ProtectedRoute from "./components/wrappers/ProtectedRoute";
 import { LoadingSpinner } from "./components/loading-spinner";
 
@@ -25,6 +27,8 @@ function App() {
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/sign-in/*" element={<SignInPage />} />
+        <Route path="/sign-up/*" element={<SignUpPage />} />
         <Route
           path="/dashboard"
           element={
