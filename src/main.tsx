@@ -19,8 +19,12 @@ TempoDevtools.init();
 // Get the Convex URL from environment variables
 const convexUrl = import.meta.env.VITE_CONVEX_URL;
 
-// Create a Convex client
-const convex = new ConvexReactClient(convexUrl);
+// Create a Convex client with the correct deployment ID for production
+const convex = new ConvexReactClient(convexUrl, {
+  // Use the CONVEX_DEPLOYMENT environment variable in production
+  // This ensures we connect to the production deployment when on flock.center
+  deploymentId: import.meta.env.CONVEX_DEPLOYMENT || undefined,
+});
 
 // Determine if we're in Tempo environment
 const isTempo = import.meta.env.VITE_TEMPO === "true";
