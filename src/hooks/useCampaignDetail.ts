@@ -109,7 +109,17 @@ export function useCampaignDetail(campaignId: string) {
     if (!campaign) return null;
 
     try {
-      // Mock implementation
+      // Call the actual Convex mutation
+      const postId = await createPostMutation({
+        campaignId: campaign.id as Id<"campaigns">,
+        title: data.title,
+        content: data.content,
+        imageUrl: data.imageUrl,
+        status: data.status,
+        scheduledFor: data.scheduledFor,
+        sharedOnTwitter: data.sharedOnTwitter,
+      });
+
       toast({
         title: "Success",
         description:
@@ -118,7 +128,7 @@ export function useCampaignDetail(campaignId: string) {
             : "Post created successfully",
       });
 
-      return "mock-post-id";
+      return postId;
     } catch (error) {
       toast({
         title: "Error",
@@ -131,9 +141,14 @@ export function useCampaignDetail(campaignId: string) {
   };
 
   // Update a post
-  const updatePost = async (postId: any, data: any) => {
+  const updatePost = async (postId: Id<"campaignPosts">, data: any) => {
     try {
-      // Mock implementation
+      // Call the actual Convex mutation
+      await updatePostMutation({
+        postId,
+        ...data,
+      });
+
       toast({
         title: "Success",
         description: "Post updated successfully",
@@ -152,9 +167,13 @@ export function useCampaignDetail(campaignId: string) {
   };
 
   // Delete a post
-  const deletePost = async (postId: any) => {
+  const deletePost = async (postId: Id<"campaignPosts">) => {
     try {
-      // Mock implementation
+      // Call the actual Convex mutation
+      await deletePostMutation({
+        postId,
+      });
+
       toast({
         title: "Success",
         description: "Post deleted successfully",
@@ -173,9 +192,13 @@ export function useCampaignDetail(campaignId: string) {
   };
 
   // Publish a post to Twitter
-  const publishToTwitter = async (postId: any) => {
+  const publishToTwitter = async (postId: Id<"campaignPosts">) => {
     try {
-      // Mock implementation
+      // Call the actual Convex mutation
+      await publishToTwitterMutation({
+        postId,
+      });
+
       toast({
         title: "Success",
         description: "Post published to Twitter",
@@ -196,9 +219,13 @@ export function useCampaignDetail(campaignId: string) {
   };
 
   // Cancel a scheduled post
-  const cancelScheduledPost = async (postId: any) => {
+  const cancelScheduledPost = async (postId: Id<"campaignPosts">) => {
     try {
-      // Mock implementation
+      // Call the actual Convex mutation
+      await cancelScheduledPostMutation({
+        postId,
+      });
+
       toast({
         title: "Success",
         description: "Scheduled post cancelled",
