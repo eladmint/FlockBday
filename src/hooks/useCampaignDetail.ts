@@ -11,13 +11,32 @@ export function useCampaignDetail(campaignId: string) {
   // Get campaign details from Convex
   // Using getMyCampaigns instead since getCampaign is not available
   const myCampaigns = useQuery(api.campaigns.getMyCampaigns);
-  const campaign = myCampaigns?.find((c) => c._id === campaignId);
+  const campaign = myCampaigns?.find(
+    (c) => c._id === (campaignId as Id<"campaigns">),
+  );
+
+  // Log campaign details for debugging
+  useEffect(() => {
+    if (campaign) {
+      console.log("Found campaign:", campaign);
+      console.log("Campaign ID:", campaign._id);
+      console.log("Campaign ID type:", typeof campaign._id);
+    }
+  }, [campaign]);
 
   // Get campaign posts
-  const posts = [];
+  const posts =
+    useQuery(
+      api.posts.getCampaignPosts,
+      campaign ? { campaignId: campaign._id as Id<"campaigns"> } : "skip",
+    ) || [];
 
   // Get scheduled posts
-  const scheduledPosts = [];
+  const scheduledPosts =
+    useQuery(
+      api.posts.getScheduledPosts,
+      campaign ? { campaignId: campaign._id as Id<"campaigns"> } : "skip",
+    ) || [];
 
   // Get Twitter status for this campaign
   const twitterStatus = useQuery(
@@ -49,13 +68,32 @@ export function useCampaignDetail(campaignId: string) {
 
   // Enable Twitter for campaign
   const enableTwitter = async () => {
-    if (!campaign) return false;
+    if (!campaign) {
+      console.error("Cannot enable Twitter: No campaign found");
+      return false;
+    }
 
     try {
-      // Call the actual Convex mutation
-      await enableTwitterMutation({
+      // Make sure we have a valid campaign ID
+      if (!campaign._id) {
+        console.error("Cannot enable Twitter: Invalid campaign ID");
+        toast({
+          title: "Error",
+          description: "Invalid campaign ID",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      console.log("Enabling Twitter for campaign:", campaign._id);
+
+      // Call the Convex mutation with the campaign ID
+      const result = await enableTwitterMutation({
         campaignId: campaign._id as Id<"campaigns">,
       });
+
+      console.log("Twitter enable result:", result);
+
       toast({
         title: "Success",
         description: "Twitter publishing enabled for this campaign",
@@ -63,10 +101,16 @@ export function useCampaignDetail(campaignId: string) {
       return true;
     } catch (error) {
       console.error("Error enabling Twitter:", error);
+      // Log more details about the error
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
+
       toast({
         title: "Error",
         description:
-          error instanceof Error ? error.message : "Failed to enable Twitter",
+          "Failed to enable Twitter. Please make sure your Twitter account is connected in settings.",
         variant: "destructive",
       });
       return false;
@@ -75,13 +119,32 @@ export function useCampaignDetail(campaignId: string) {
 
   // Disable Twitter for campaign
   const disableTwitter = async () => {
-    if (!campaign) return false;
+    if (!campaign) {
+      console.error("Cannot disable Twitter: No campaign found");
+      return false;
+    }
 
     try {
-      // Call the actual Convex mutation
-      await disableTwitterMutation({
+      // Make sure we have a valid campaign ID
+      if (!campaign._id) {
+        console.error("Cannot disable Twitter: Invalid campaign ID");
+        toast({
+          title: "Error",
+          description: "Invalid campaign ID",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      console.log("Disabling Twitter for campaign:", campaign._id);
+
+      // Call the Convex mutation with the campaign ID
+      const result = await disableTwitterMutation({
         campaignId: campaign._id as Id<"campaigns">,
       });
+
+      console.log("Twitter disable result:", result);
+
       toast({
         title: "Success",
         description: "Twitter publishing disabled for this campaign",
@@ -89,10 +152,15 @@ export function useCampaignDetail(campaignId: string) {
       return true;
     } catch (error) {
       console.error("Error disabling Twitter:", error);
+      // Log more details about the error
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
+
       toast({
         title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to disable Twitter",
+        description: "Failed to disable Twitter",
         variant: "destructive",
       });
       return false;
@@ -108,10 +176,26 @@ export function useCampaignDetail(campaignId: string) {
     scheduledFor?: number;
     sharedOnTwitter?: boolean;
   }) => {
-    if (!campaign) return null;
+    if (!campaign) {
+      console.error("Cannot create post: No campaign found");
+      return null;
+    }
 
     try {
-      // Call the actual Convex mutation
+      // Make sure we have a valid campaign ID
+      if (!campaign._id) {
+        console.error("Cannot create post: Invalid campaign ID");
+        toast({
+          title: "Error",
+          description: "Invalid campaign ID",
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      console.log("Creating post for campaign:", campaign._id);
+
+      // Call the Convex mutation
       const postId = await createPostMutation({
         campaignId: campaign._id as Id<"campaigns">,
         title: data.title,
@@ -121,6 +205,8 @@ export function useCampaignDetail(campaignId: string) {
         scheduledFor: data.scheduledFor,
         sharedOnTwitter: data.sharedOnTwitter,
       });
+
+      console.log("Post created with ID:", postId);
 
       toast({
         title: "Success",
