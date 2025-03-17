@@ -28,20 +28,20 @@ export function useCampaignDetail(campaignId: string) {
   const posts =
     useQuery(
       api.posts.getCampaignPosts,
-      campaign ? { campaignId: campaign._id as Id<"campaigns"> } : "skip",
+      campaign ? { campaignId: campaign._id } : "skip",
     ) || [];
 
   // Get scheduled posts
   const scheduledPosts =
     useQuery(
       api.posts.getScheduledPosts,
-      campaign ? { campaignId: campaign._id as Id<"campaigns"> } : "skip",
+      campaign ? { campaignId: campaign._id } : "skip",
     ) || [];
 
   // Get Twitter status for this campaign
   const twitterStatus = useQuery(
     api.twitter.getCampaignTwitterStatus,
-    campaign ? { campaignId: campaign._id as Id<"campaigns"> } : "skip",
+    campaign ? { campaignId: campaign._id } : "skip",
   );
 
   // Mutations
@@ -86,11 +86,13 @@ export function useCampaignDetail(campaignId: string) {
       }
 
       console.log("Enabling Twitter for campaign:", campaign._id);
+      console.log("Campaign ID type:", typeof campaign._id);
 
       // Call the Convex mutation with the campaign ID
-      // Explicitly cast the campaign ID to the correct type
+      // Make sure the campaign ID is properly cast to the correct type
+      const campaignId = campaign._id;
       const result = await enableTwitterMutation({
-        campaignId: campaign._id as Id<"campaigns">,
+        campaignId,
       });
 
       console.log("Twitter enable result:", result);
@@ -138,11 +140,13 @@ export function useCampaignDetail(campaignId: string) {
       }
 
       console.log("Disabling Twitter for campaign:", campaign._id);
+      console.log("Campaign ID type:", typeof campaign._id);
 
       // Call the Convex mutation with the campaign ID
-      // Explicitly cast the campaign ID to the correct type
+      // Make sure the campaign ID is properly cast to the correct type
+      const campaignId = campaign._id;
       const result = await disableTwitterMutation({
-        campaignId: campaign._id as Id<"campaigns">,
+        campaignId,
       });
 
       console.log("Twitter disable result:", result);
@@ -196,10 +200,13 @@ export function useCampaignDetail(campaignId: string) {
       }
 
       console.log("Creating post for campaign:", campaign._id);
+      console.log("Campaign ID type:", typeof campaign._id);
 
       // Call the Convex mutation
+      // Make sure the campaign ID is properly handled
+      const campaignId = campaign._id;
       const postId = await createPostMutation({
-        campaignId: campaign._id as Id<"campaigns">,
+        campaignId,
         title: data.title,
         content: data.content,
         imageUrl: data.imageUrl,
