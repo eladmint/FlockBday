@@ -26,6 +26,10 @@ const convex = new ConvexReactClient(convexUrl, {
   deploymentId: import.meta.env.CONVEX_DEPLOYMENT || undefined,
 });
 
+// Log deployment information for debugging
+console.log("Convex URL:", convexUrl);
+console.log("Deployment ID:", import.meta.env.CONVEX_DEPLOYMENT || "undefined");
+
 // Determine if we're in Tempo environment
 const isTempo = import.meta.env.VITE_TEMPO === "true";
 
