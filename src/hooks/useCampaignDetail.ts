@@ -19,8 +19,11 @@ export function useCampaignDetail(campaignId: string) {
   // Get scheduled posts
   const scheduledPosts = [];
 
-  // Mock Twitter status
-  const twitterStatus = { enabled: false };
+  // Get Twitter status for this campaign
+  const twitterStatus = useQuery(
+    api.twitter.getCampaignTwitterStatus,
+    campaign ? { campaignId: campaign.id as Id<"campaigns"> } : "skip",
+  );
 
   // Mutations
   const enableTwitterMutation = useMutation(
@@ -49,7 +52,10 @@ export function useCampaignDetail(campaignId: string) {
     if (!campaign) return false;
 
     try {
-      // Mock implementation
+      // Call the actual Convex mutation
+      await enableTwitterMutation({
+        campaignId: campaign.id as Id<"campaigns">,
+      });
       toast({
         title: "Success",
         description: "Twitter publishing enabled for this campaign",
@@ -71,7 +77,10 @@ export function useCampaignDetail(campaignId: string) {
     if (!campaign) return false;
 
     try {
-      // Mock implementation
+      // Call the actual Convex mutation
+      await disableTwitterMutation({
+        campaignId: campaign.id as Id<"campaigns">,
+      });
       toast({
         title: "Success",
         description: "Twitter publishing disabled for this campaign",
@@ -213,7 +222,7 @@ export function useCampaignDetail(campaignId: string) {
     campaign,
     posts,
     scheduledPosts,
-    twitterEnabled: twitterStatus?.enabled || false,
+    twitterEnabled: twitterStatus?.enabled ?? false,
     isLoading,
     enableTwitter,
     disableTwitter,
