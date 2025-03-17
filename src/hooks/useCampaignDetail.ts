@@ -88,6 +88,7 @@ export function useCampaignDetail(campaignId: string) {
       console.log("Enabling Twitter for campaign:", campaign._id);
 
       // Call the Convex mutation with the campaign ID
+      // Explicitly cast the campaign ID to the correct type
       const result = await enableTwitterMutation({
         campaignId: campaign._id as Id<"campaigns">,
       });
@@ -139,6 +140,7 @@ export function useCampaignDetail(campaignId: string) {
       console.log("Disabling Twitter for campaign:", campaign._id);
 
       // Call the Convex mutation with the campaign ID
+      // Explicitly cast the campaign ID to the correct type
       const result = await disableTwitterMutation({
         campaignId: campaign._id as Id<"campaigns">,
       });
