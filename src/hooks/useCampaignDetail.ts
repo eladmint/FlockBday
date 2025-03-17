@@ -11,7 +11,7 @@ export function useCampaignDetail(campaignId: string) {
   // Get campaign details from Convex
   // Using getMyCampaigns instead since getCampaign is not available
   const myCampaigns = useQuery(api.campaigns.getMyCampaigns);
-  const campaign = myCampaigns?.find((c) => c.id === campaignId);
+  const campaign = myCampaigns?.find((c) => c._id === campaignId);
 
   // Get campaign posts
   const posts = [];
@@ -22,7 +22,7 @@ export function useCampaignDetail(campaignId: string) {
   // Get Twitter status for this campaign
   const twitterStatus = useQuery(
     api.twitter.getCampaignTwitterStatus,
-    campaign ? { campaignId: campaign.id as Id<"campaigns"> } : "skip",
+    campaign ? { campaignId: campaign._id as Id<"campaigns"> } : "skip",
   );
 
   // Mutations
@@ -54,7 +54,7 @@ export function useCampaignDetail(campaignId: string) {
     try {
       // Call the actual Convex mutation
       await enableTwitterMutation({
-        campaignId: campaign.id as Id<"campaigns">,
+        campaignId: campaign._id as Id<"campaigns">,
       });
       toast({
         title: "Success",
@@ -62,6 +62,7 @@ export function useCampaignDetail(campaignId: string) {
       });
       return true;
     } catch (error) {
+      console.error("Error enabling Twitter:", error);
       toast({
         title: "Error",
         description:
@@ -79,7 +80,7 @@ export function useCampaignDetail(campaignId: string) {
     try {
       // Call the actual Convex mutation
       await disableTwitterMutation({
-        campaignId: campaign.id as Id<"campaigns">,
+        campaignId: campaign._id as Id<"campaigns">,
       });
       toast({
         title: "Success",
@@ -87,6 +88,7 @@ export function useCampaignDetail(campaignId: string) {
       });
       return true;
     } catch (error) {
+      console.error("Error disabling Twitter:", error);
       toast({
         title: "Error",
         description:
@@ -111,7 +113,7 @@ export function useCampaignDetail(campaignId: string) {
     try {
       // Call the actual Convex mutation
       const postId = await createPostMutation({
-        campaignId: campaign.id as Id<"campaigns">,
+        campaignId: campaign._id as Id<"campaigns">,
         title: data.title,
         content: data.content,
         imageUrl: data.imageUrl,
@@ -130,6 +132,7 @@ export function useCampaignDetail(campaignId: string) {
 
       return postId;
     } catch (error) {
+      console.error("Error creating post:", error);
       toast({
         title: "Error",
         description:
