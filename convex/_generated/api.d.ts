@@ -23,6 +23,7 @@ import type * as internal_ from "../internal.js";
 import type * as posts from "../posts.js";
 import type * as subscriptions from "../subscriptions.js";
 import type * as test from "../test.js";
+import type * as twitter_api from "../twitter-api.js";
 import type * as twitter from "../twitter.js";
 import type * as users from "../users.js";
 
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   posts: typeof posts;
   subscriptions: typeof subscriptions;
   test: typeof test;
+  "twitter-api": typeof twitter_api;
   twitter: typeof twitter;
   users: typeof users;
 }>;
