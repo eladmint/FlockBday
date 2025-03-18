@@ -1,5 +1,6 @@
 import { CampaignPageLayout } from "@/components/campaign-page-layout";
 import { TwitterTestButton } from "@/components/twitter-test-button";
+import { TwitterApiTester } from "@/components/twitter-api-tester";
 import {
   Card,
   CardContent,
@@ -106,83 +107,7 @@ export default function TwitterTestPage() {
           </TabsContent>
 
           <TabsContent value="credentials">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configure Twitter API Credentials</CardTitle>
-                <CardDescription>
-                  Enter your Twitter API credentials to test the integration.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-sm text-gray-600 mb-4">
-                    These credentials will only be stored in memory for the
-                    current session and will not be saved permanently. For
-                    production use, you should set these as environment
-                    variables.
-                  </p>
-
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="apiKey">API Key</Label>
-                      <Input
-                        id="apiKey"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        placeholder="Enter your Twitter API key"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="apiSecret">API Secret</Label>
-                      <Input
-                        id="apiSecret"
-                        type="password"
-                        value={apiSecret}
-                        onChange={(e) => setApiSecret(e.target.value)}
-                        placeholder="Enter your Twitter API secret"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="accessToken">Access Token</Label>
-                      <Input
-                        id="accessToken"
-                        value={accessToken}
-                        onChange={(e) => setAccessToken(e.target.value)}
-                        placeholder="Enter your Twitter access token"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="accessTokenSecret">
-                        Access Token Secret
-                      </Label>
-                      <Input
-                        id="accessTokenSecret"
-                        type="password"
-                        value={accessTokenSecret}
-                        onChange={(e) => setAccessTokenSecret(e.target.value)}
-                        placeholder="Enter your Twitter access token secret"
-                      />
-                    </div>
-
-                    <Button
-                      onClick={handleSaveCredentials}
-                      disabled={
-                        isSaving ||
-                        !apiKey ||
-                        !apiSecret ||
-                        !accessToken ||
-                        !accessTokenSecret
-                      }
-                    >
-                      {isSaving ? "Saving..." : "Save Credentials"}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <TwitterApiTester />
           </TabsContent>
 
           <TabsContent value="info">

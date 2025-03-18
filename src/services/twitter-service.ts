@@ -1,4 +1,5 @@
 import { useToast } from "@/components/ui/use-toast";
+import { createTwitterClient } from "./twitter-api-client";
 
 // Twitter API credentials from environment variables
 const TWITTER_API_KEY = import.meta.env.VITE_TWITTER_API_KEY;
@@ -15,119 +16,16 @@ const isTwitterConfigured = !!(
   TWITTER_ACCESS_TOKEN_SECRET
 );
 
-// Mock server-side API for Twitter integration
-const mockServerAPI = {
-  // Schedule a post on the server
-  schedulePost: async (post: any) => {
-    // Simulate API call to server-side scheduler
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // For demo purposes, if scheduled within 1 minute, publish immediately
-    const isWithinOneMinute = post.scheduledFor - Date.now() < 60000;
-
-    if (isWithinOneMinute) {
-      return {
-        ...post,
-        scheduledOnServer: false,
-        serverJobId: `job-${Date.now()}`,
-        status: "published",
-        sharedOnTwitter: true,
-        twitterPostId: `twitter-${Date.now()}`,
-        publishedAt: Date.now(),
-        twitterStats: {
-          likes: 0,
-          retweets: 0,
-          replies: 0,
-        },
-      };
-    }
-
-    return {
-      ...post,
-      scheduledOnServer: true,
-      serverJobId: `job-${Date.now()}`,
-      status: "scheduled",
-    };
-  },
-
-  // Publish a tweet immediately
-  publishTweet: async (content: string, imageUrl?: string | null) => {
-    // Check if Twitter API is configured
-    if (isTwitterConfigured) {
-      try {
-        console.log("Using real Twitter API credentials to publish tweet");
-        // In a real implementation, this would use the Twitter API
-        // For example, with the twitter-api-v2 library:
-        // const client = new TwitterApi({
-        //   appKey: TWITTER_API_KEY,
-        //   appSecret: TWITTER_API_SECRET,
-        //   accessToken: TWITTER_ACCESS_TOKEN,
-        //   accessSecret: TWITTER_ACCESS_TOKEN_SECRET,
-        // });
-        // const tweet = await client.v2.tweet(content);
-
-        // For now, we'll still simulate the API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        return {
-          id: `twitter-${Date.now()}`,
-          text: content,
-          created_at: new Date().toISOString(),
-          public_metrics: {
-            retweet_count: 0,
-            reply_count: 0,
-            like_count: 0,
-            quote_count: 0,
-          },
-        };
-      } catch (error) {
-        console.error("Error publishing to Twitter:", error);
-        throw error;
-      }
-    } else {
-      // Simulate API call in demo mode
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // For demo purposes, log that we're attempting to publish to Twitter
-      console.log(`TWITTER API: Publishing tweet: "${content}"`);
-      console.log(
-        "Note: In this demo, tweets are not actually published to Twitter",
-      );
-
-      // Store in localStorage that we attempted to publish
-      const tweetAttempts = JSON.parse(
-        localStorage.getItem("tweetAttempts") || "[]",
-      );
-      tweetAttempts.push({
-        content,
-        imageUrl,
-        timestamp: Date.now(),
-        status: "attempted",
-      });
-      localStorage.setItem("tweetAttempts", JSON.stringify(tweetAttempts));
-
-      // Simulate success (in a real app, this would return data from Twitter API)
-      return {
-        id: `twitter-${Date.now()}`,
-        text: content,
-        created_at: new Date().toISOString(),
-        public_metrics: {
-          retweet_count: 0,
-          reply_count: 0,
-          like_count: 0,
-          quote_count: 0,
-        },
-      };
-    }
-  },
-
-  // Cancel a scheduled post on the server
-  cancelScheduledPost: async (serverJobId: string) => {
-    // Simulate API call to cancel server job
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    return { success: true };
-  },
-};
+// Create Twitter client if credentials are available
+let twitterClient = null;
+try {
+  if (isTwitterConfigured) {
+    twitterClient = createTwitterClient();
+    console.log("Twitter client initialized successfully");
+  }
+} catch (error) {
+  console.error("Failed to initialize Twitter client:", error);
+}
 
 export class TwitterService {
   private static instance: TwitterService;
@@ -152,19 +50,24 @@ export class TwitterService {
 
   public async verifyAuthentication(): Promise<boolean> {
     try {
-      // In a real implementation, this would make an API call to verify credentials
-      // For now, we'll just check if credentials exist
+      // Check if credentials exist
       const hasCredentials = await this.checkCredentials();
       if (!hasCredentials) {
         console.error("Twitter credentials not configured");
         return false;
       }
 
-      // Simulate API call
+      if (!twitterClient) {
+        console.error("Twitter client not initialized");
+        return false;
+      }
+
+      // Make a real API call to verify credentials
       console.log("Making API call to verify Twitter credentials...");
 
-      // For testing purposes, we'll return true if credentials exist
-      return true;
+      // Get the authenticated user to verify credentials
+      const user = await twitterClient.v2.me();
+      return !!user.data.id;
     } catch (error) {
       console.error("Error verifying Twitter authentication:", error);
       return false;
@@ -174,17 +77,27 @@ export class TwitterService {
   public async getUserProfile(): Promise<any> {
     try {
       const hasCredentials = await this.checkCredentials();
-      if (!hasCredentials) {
-        throw new Error("Twitter credentials not configured");
+      if (!hasCredentials || !twitterClient) {
+        throw new Error(
+          "Twitter credentials not configured or client not initialized",
+        );
       }
 
-      // For testing purposes, we'll return mock data
+      // Get the authenticated user profile
+      const user = await twitterClient.v2.me({
+        expansions: ["pinned_tweet_id"],
+        "user.fields": ["profile_image_url", "description", "public_metrics"],
+      });
+
       return {
-        id: "12345678",
-        username: "test_user",
-        name: "Test User",
+        id: user.data.id,
+        username: user.data.username,
+        name: user.data.name,
         profile_image_url:
-          "https://api.dicebear.com/7.x/avataaars/svg?seed=twitter",
+          user.data.profile_image_url ||
+          `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.data.id}`,
+        description: user.data.description,
+        metrics: user.data.public_metrics,
       };
     } catch (error) {
       console.error("Error getting Twitter user profile:", error);
@@ -196,33 +109,26 @@ export class TwitterService {
     if (!post.isScheduled || !post.scheduledFor) return post;
 
     try {
+      // For scheduled posts, we'll use the Convex backend
+      // This will be handled by the server-side scheduler
       console.log(
-        `Scheduling post ${post.id} on server for ${new Date(post.scheduledFor).toLocaleString()}`,
-      );
-      console.log(
-        "Note: In this demo, scheduled posts may not actually be published to Twitter",
+        `Scheduling post ${post.id} for ${new Date(post.scheduledFor).toLocaleString()}`,
       );
 
-      // Store scheduled post in localStorage
-      const scheduledPosts = JSON.parse(
-        localStorage.getItem("scheduledPosts") || "[]",
-      );
-      scheduledPosts.push({
+      // In a real implementation, you would call a Convex mutation here
+      // to store the scheduled post in the database
+      // For now, we'll just return the post with updated status
+      return {
         ...post,
-        scheduledTime: post.scheduledFor,
         status: "scheduled",
-      });
-      localStorage.setItem("scheduledPosts", JSON.stringify(scheduledPosts));
-
-      // Send to server-side scheduler
-      const scheduledPost = await mockServerAPI.schedulePost(post);
-      return scheduledPost;
+        serverJobId: `job-${Date.now()}`,
+      };
     } catch (error) {
-      console.error("Error scheduling post on server:", error);
+      console.error("Error scheduling post:", error);
       return {
         ...post,
         status: "failed",
-        error: error.message || "Failed to schedule post on server",
+        error: error.message || "Failed to schedule post",
       };
     }
   }
@@ -231,9 +137,10 @@ export class TwitterService {
     if (!post.serverJobId) return false;
 
     try {
-      // Call server API to cancel the scheduled job
-      const result = await mockServerAPI.cancelScheduledPost(post.serverJobId);
-      return result.success;
+      // In a real implementation, you would call a Convex mutation here
+      // to cancel the scheduled post
+      // For now, we'll just return success
+      return true;
     } catch (error) {
       console.error("Error canceling scheduled post:", error);
       return false;
@@ -242,19 +149,29 @@ export class TwitterService {
 
   public async publishPost(post: any): Promise<any> {
     try {
+      if (!twitterClient) {
+        throw new Error("Twitter client not initialized");
+      }
+
       console.log(`Publishing post to Twitter: ${post.id}`);
 
-      // Call Twitter API (mock)
-      const twitterResponse = await mockServerAPI.publishTweet(
-        post.content,
-        post.imageUrl,
-      );
+      // Call Twitter API to post the tweet
+      let tweetResponse;
+      if (post.imageUrl) {
+        // For posts with images, we would need to download and upload the image
+        // This is a simplified version that just includes the image URL in the tweet
+        tweetResponse = await twitterClient.v2.tweet(
+          `${post.content} ${post.imageUrl}`,
+        );
+      } else {
+        tweetResponse = await twitterClient.v2.tweet(post.content);
+      }
 
       // Create updated post with Twitter data
       const updatedPost = {
         ...post,
         sharedOnTwitter: true,
-        twitterPostId: twitterResponse.id,
+        twitterPostId: tweetResponse.data.id,
         status: "published",
         publishedAt: Date.now(),
         twitterStats: {
@@ -263,20 +180,6 @@ export class TwitterService {
           replies: 0,
         },
       };
-
-      // Save to published tweets in localStorage
-      const publishedTweets = JSON.parse(
-        localStorage.getItem("publishedTweets") || "[]",
-      );
-      publishedTweets.push({
-        id: twitterResponse.id,
-        postId: post.id,
-        content: post.content,
-        imageUrl: post.imageUrl,
-        publishedAt: Date.now(),
-        campaignId: post.campaignId,
-      });
-      localStorage.setItem("publishedTweets", JSON.stringify(publishedTweets));
 
       return updatedPost;
     } catch (error) {
@@ -300,10 +203,25 @@ export class TwitterService {
     accessToken: string;
     accessTokenSecret: string;
   }): void {
-    // In a real implementation, we would set these credentials
-    // For now, we'll just log that we received them
-    console.log("Received Twitter credentials");
-    // We would normally store these securely or use them to initialize a client
+    console.log("Setting Twitter credentials");
+
+    try {
+      // Initialize Twitter client with provided credentials
+      twitterClient = createTwitterClient({
+        apiKey,
+        apiSecret,
+        accessToken,
+        accessTokenSecret,
+      });
+
+      console.log("Twitter client initialized with provided credentials");
+    } catch (error) {
+      console.error(
+        "Failed to initialize Twitter client with provided credentials:",
+        error,
+      );
+      twitterClient = null;
+    }
   }
 }
 
@@ -317,14 +235,14 @@ export function useTwitterService() {
       try {
         const scheduledPost = await twitterService.schedulePost(post);
         toast({
-          title: "Post Scheduled on Server",
+          title: "Post Scheduled",
           description: `Your post will be published on ${new Date(post.scheduledFor).toLocaleString()}`,
         });
         return scheduledPost;
       } catch (error) {
         toast({
           title: "Error",
-          description: "Failed to schedule post on server",
+          description: "Failed to schedule post",
           variant: "destructive",
         });
         throw error;
@@ -355,7 +273,7 @@ export function useTwitterService() {
         if (cancelled) {
           toast({
             title: "Post Unscheduled",
-            description: "Your scheduled post has been cancelled on the server",
+            description: "Your scheduled post has been cancelled",
           });
         }
         return cancelled;
