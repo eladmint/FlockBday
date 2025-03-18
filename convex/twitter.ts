@@ -137,7 +137,14 @@ export const enableTwitterForCampaign = mutation({
     }
 
     const tokenIdentifier = identity.subject;
-    const campaignId = args.campaignId as unknown as Id<"campaigns">;
+
+    // Validate the campaign ID format before casting
+    let campaignId;
+    try {
+      campaignId = args.campaignId as unknown as Id<"campaigns">;
+    } catch (error) {
+      throw new Error(`Invalid campaign ID format: ${args.campaignId}`);
+    }
 
     // Check if user is a member of the campaign with appropriate permissions
     const membership = await ctx.db
@@ -212,7 +219,14 @@ export const disableTwitterForCampaign = mutation({
     }
 
     const tokenIdentifier = identity.subject;
-    const campaignId = args.campaignId as unknown as Id<"campaigns">;
+
+    // Validate the campaign ID format before casting
+    let campaignId;
+    try {
+      campaignId = args.campaignId as unknown as Id<"campaigns">;
+    } catch (error) {
+      throw new Error(`Invalid campaign ID format: ${args.campaignId}`);
+    }
 
     // Check if user is a member of the campaign with appropriate permissions
     const membership = await ctx.db
@@ -290,7 +304,14 @@ export const getCampaignTwitterStatus = query({
     }
 
     const tokenIdentifier = identity.subject;
-    const campaignId = args.campaignId as unknown as Id<"campaigns">;
+
+    // Validate the campaign ID format before casting
+    let campaignId;
+    try {
+      campaignId = args.campaignId as unknown as Id<"campaigns">;
+    } catch (error) {
+      throw new Error(`Invalid campaign ID format: ${args.campaignId}`);
+    }
 
     // Get the campaign
     const campaign = await ctx.db.get(campaignId);

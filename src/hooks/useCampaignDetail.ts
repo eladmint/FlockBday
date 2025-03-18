@@ -123,10 +123,26 @@ export function useCampaignDetail(campaignId: string) {
         console.error("Error stack:", error.stack);
       }
 
+      // Provide more specific error messages based on the error type
+      let errorMessage =
+        "Failed to enable Twitter. Please make sure your Twitter account is connected in settings.";
+
+      if (error instanceof Error) {
+        if (error.message.includes("Twitter account not connected")) {
+          errorMessage =
+            "Please connect your Twitter account in settings first.";
+        } else if (error.message.includes("Not authorized")) {
+          errorMessage =
+            "You don't have permission to enable Twitter for this campaign.";
+        } else if (error.message.includes("Invalid campaign ID")) {
+          errorMessage =
+            "Invalid campaign ID format. Please try again or contact support.";
+        }
+      }
+
       toast({
         title: "Error",
-        description:
-          "Failed to enable Twitter. Please make sure your Twitter account is connected in settings.",
+        description: errorMessage,
         variant: "destructive",
       });
       return false;
@@ -184,9 +200,22 @@ export function useCampaignDetail(campaignId: string) {
         console.error("Error stack:", error.stack);
       }
 
+      // Provide more specific error messages based on the error type
+      let errorMessage = "Failed to disable Twitter.";
+
+      if (error instanceof Error) {
+        if (error.message.includes("Not authorized")) {
+          errorMessage =
+            "You don't have permission to disable Twitter for this campaign.";
+        } else if (error.message.includes("Invalid campaign ID")) {
+          errorMessage =
+            "Invalid campaign ID format. Please try again or contact support.";
+        }
+      }
+
       toast({
         title: "Error",
-        description: "Failed to disable Twitter",
+        description: errorMessage,
         variant: "destructive",
       });
       return false;
