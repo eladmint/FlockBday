@@ -127,7 +127,7 @@ export const disconnectTwitterAccount = mutation({
 // Enable Twitter for a campaign
 export const enableTwitterForCampaign = mutation({
   args: {
-    campaignId: v.id("campaigns"),
+    campaignId: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -137,11 +137,14 @@ export const enableTwitterForCampaign = mutation({
 
     const tokenIdentifier = identity.subject;
 
+    // Convert string ID to Convex ID
+    const campaignId = args.campaignId as Id<"campaigns">;
+
     // Check if user is a member of the campaign with appropriate permissions
     const membership = await ctx.db
       .query("campaignMembers")
       .withIndex("by_campaign_and_user", (q) =>
-        q.eq("campaignId", args.campaignId).eq("userId", tokenIdentifier),
+        q.eq("campaignId", campaignId).eq("userId", tokenIdentifier),
       )
       .first();
 
@@ -163,7 +166,7 @@ export const enableTwitterForCampaign = mutation({
     }
 
     // Enable Twitter for the campaign
-    await ctx.db.patch(args.campaignId, {
+    await ctx.db.patch(campaignId, {
       twitterEnabled: true,
       updatedAt: Date.now(),
     });
@@ -172,14 +175,14 @@ export const enableTwitterForCampaign = mutation({
     const campaignIntegration = await ctx.db
       .query("twitterIntegrations")
       .withIndex("by_user_and_campaign", (q) =>
-        q.eq("userId", tokenIdentifier).eq("campaignId", args.campaignId),
+        q.eq("userId", tokenIdentifier).eq("campaignId", campaignId),
       )
       .first();
 
     if (!campaignIntegration) {
       await ctx.db.insert("twitterIntegrations", {
         userId: tokenIdentifier,
-        campaignId: args.campaignId,
+        campaignId: campaignId,
         accessToken: integration.accessToken,
         accessTokenSecret: integration.accessTokenSecret,
         username: integration.username,
@@ -201,7 +204,7 @@ export const enableTwitterForCampaign = mutation({
 // Disable Twitter for a campaign
 export const disableTwitterForCampaign = mutation({
   args: {
-    campaignId: v.id("campaigns"),
+    campaignId: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -211,11 +214,14 @@ export const disableTwitterForCampaign = mutation({
 
     const tokenIdentifier = identity.subject;
 
+    // Convert string ID to Convex ID
+    const campaignId = args.campaignId as Id<"campaigns">;
+
     // Check if user is a member of the campaign with appropriate permissions
     const membership = await ctx.db
       .query("campaignMembers")
       .withIndex("by_campaign_and_user", (q) =>
-        q.eq("campaignId", args.campaignId).eq("userId", tokenIdentifier),
+        q.eq("campaignId", campaignId).eq("userId", tokenIdentifier),
       )
       .first();
 
@@ -227,7 +233,7 @@ export const disableTwitterForCampaign = mutation({
     }
 
     // Disable Twitter for the campaign
-    await ctx.db.patch(args.campaignId, {
+    await ctx.db.patch(campaignId, {
       twitterEnabled: false,
       updatedAt: Date.now(),
     });
@@ -236,7 +242,7 @@ export const disableTwitterForCampaign = mutation({
     const campaignIntegration = await ctx.db
       .query("twitterIntegrations")
       .withIndex("by_user_and_campaign", (q) =>
-        q.eq("userId", tokenIdentifier).eq("campaignId", args.campaignId),
+        q.eq("userId", tokenIdentifier).eq("campaignId", campaignId),
       )
       .first();
 
@@ -278,7 +284,7 @@ export const getTwitterStatus = query({
 // Check campaign Twitter status
 export const getCampaignTwitterStatus = query({
   args: {
-    campaignId: v.id("campaigns"),
+    campaignId: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -288,8 +294,11 @@ export const getCampaignTwitterStatus = query({
 
     const tokenIdentifier = identity.subject;
 
+    // Convert string ID to Convex ID
+    const campaignId = args.campaignId as Id<"campaigns">;
+
     // Get the campaign
-    const campaign = await ctx.db.get(args.campaignId);
+    const campaign = await ctx.db.get(campaignId);
     if (!campaign) {
       throw new Error("Campaign not found");
     }
@@ -298,7 +307,7 @@ export const getCampaignTwitterStatus = query({
     const membership = await ctx.db
       .query("campaignMembers")
       .withIndex("by_campaign_and_user", (q) =>
-        q.eq("campaignId", args.campaignId).eq("userId", tokenIdentifier),
+        q.eq("campaignId", campaignId).eq("userId", tokenIdentifier),
       )
       .first();
 

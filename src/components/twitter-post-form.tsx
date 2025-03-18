@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Twitter, Image, Link2, Calendar } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { useTwitterService } from "@/services/twitter-service";
+import { useCampaignDetail } from "@/hooks/useCampaignDetail";
 
 interface TwitterPostFormProps {
   campaignId: string;
@@ -28,7 +28,7 @@ export function TwitterPostForm({
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
   const { toast } = useToast();
-  const twitterService = useTwitterService();
+  const { createPost } = useCampaignDetail(campaignId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,58 +52,63 @@ export function TwitterPostForm({
 
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
       // Calculate scheduled timestamp if scheduling is enabled
       const scheduledTimestamp =
         schedulePost && scheduledDate && scheduledTime
           ? new Date(`${scheduledDate}T${scheduledTime}`).getTime()
-          : null;
+          : undefined;
 
-      const newPost = {
-        id: `post-${Date.now()}`,
+      // Create post using the Convex mutation
+      const postId = await createPost({
         title: postTitle,
         content: postContent,
-        imageUrl: imageUrl || null,
-        campaignId,
-        createdAt: Date.now(),
-        sharedOnTwitter: shareOnTwitter && isTwitterConnected,
-        twitterPostId:
-          shareOnTwitter && isTwitterConnected ? `twitter-${Date.now()}` : null,
-        isScheduled: schedulePost,
-        scheduledFor: scheduledTimestamp,
+        imageUrl: imageUrl || undefined,
         status: schedulePost ? "scheduled" : "published",
-      };
-
-      let finalPost = { ...newPost };
-
-      // The scheduling and publishing is now handled by the Convex API
-      // when the post is created with the appropriate status
-
-      onPostCreated(finalPost);
-
-      // Show success message
-      toast({
-        title: "Success",
-        description: schedulePost
-          ? `Post scheduled for ${new Date(scheduledTimestamp).toLocaleString()}`
-          : shareOnTwitter && isTwitterConnected
-            ? "Post created and shared on Twitter"
-            : "Post created successfully",
+        scheduledFor: scheduledTimestamp,
+        sharedOnTwitter: shareOnTwitter && isTwitterConnected,
       });
 
-      // Reset form
-      setPostTitle("");
-      setPostContent("");
-      setImageUrl("");
-      setSchedulePost(false);
-      setScheduledDate("");
-      setScheduledTime("");
+      if (postId) {
+        // Create a temporary post object for the UI
+        const newPost = {
+          id: postId,
+          title: postTitle,
+          content: postContent,
+          imageUrl: imageUrl || null,
+          campaignId,
+          createdAt: Date.now(),
+          sharedOnTwitter: shareOnTwitter && isTwitterConnected,
+          isScheduled: schedulePost,
+          scheduledFor: scheduledTimestamp,
+          status: schedulePost ? "scheduled" : "published",
+        };
+
+        onPostCreated(newPost);
+
+        // Show success message
+        toast({
+          title: "Success",
+          description: schedulePost
+            ? `Post scheduled for ${new Date(scheduledTimestamp).toLocaleString()}`
+            : shareOnTwitter && isTwitterConnected
+              ? "Post created and shared on Twitter"
+              : "Post created successfully",
+        });
+
+        // Reset form
+        setPostTitle("");
+        setPostContent("");
+        setImageUrl("");
+        setSchedulePost(false);
+        setScheduledDate("");
+        setScheduledTime("");
+      }
     } catch (error) {
+      console.error("Error creating post:", error);
       toast({
         title: "Error",
-        description: "Failed to create post",
+        description:
+          error instanceof Error ? error.message : "Failed to create post",
         variant: "destructive",
       });
     } finally {

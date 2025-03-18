@@ -3,6 +3,7 @@ import { api } from "../../convex/_generated/api";
 import { useToast } from "@/components/ui/use-toast";
 import { useEffect, useState } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
+import { convexIdToString } from "@/utils/convexHelpers";
 
 export function useCampaignDetail(campaignId: string) {
   const { toast } = useToast();
@@ -21,6 +22,7 @@ export function useCampaignDetail(campaignId: string) {
       console.log("Found campaign:", campaign);
       console.log("Campaign ID:", campaign._id);
       console.log("Campaign ID type:", typeof campaign._id);
+      console.log("Campaign ID as string:", convexIdToString(campaign._id));
     }
   }, [campaign]);
 
@@ -28,20 +30,20 @@ export function useCampaignDetail(campaignId: string) {
   const posts =
     useQuery(
       api.posts.getCampaignPosts,
-      campaign ? { campaignId: campaign._id } : "skip",
+      campaign ? { campaignId: convexIdToString(campaign._id) } : "skip",
     ) || [];
 
   // Get scheduled posts
   const scheduledPosts =
     useQuery(
       api.posts.getScheduledPosts,
-      campaign ? { campaignId: campaign._id } : "skip",
+      campaign ? { campaignId: convexIdToString(campaign._id) } : "skip",
     ) || [];
 
   // Get Twitter status for this campaign
   const twitterStatus = useQuery(
     api.twitter.getCampaignTwitterStatus,
-    campaign ? { campaignId: campaign._id } : "skip",
+    campaign ? { campaignId: convexIdToString(campaign._id) } : "skip",
   );
 
   // Mutations
@@ -88,11 +90,13 @@ export function useCampaignDetail(campaignId: string) {
       console.log("Enabling Twitter for campaign:", campaign._id);
       console.log("Campaign ID type:", typeof campaign._id);
 
-      // Call the Convex mutation with the campaign ID
-      // Make sure the campaign ID is properly cast to the correct type
-      const campaignId = campaign._id;
+      // Convert the ID to a string format that Convex can handle
+      const campaignIdStr = convexIdToString(campaign._id);
+      console.log("Using campaign ID (string):", campaignIdStr);
+
+      // Call the Convex mutation with the string ID
       const result = await enableTwitterMutation({
-        campaignId,
+        campaignId: campaignIdStr,
       });
 
       console.log("Twitter enable result:", result);
@@ -142,11 +146,13 @@ export function useCampaignDetail(campaignId: string) {
       console.log("Disabling Twitter for campaign:", campaign._id);
       console.log("Campaign ID type:", typeof campaign._id);
 
-      // Call the Convex mutation with the campaign ID
-      // Make sure the campaign ID is properly cast to the correct type
-      const campaignId = campaign._id;
+      // Convert the ID to a string format that Convex can handle
+      const campaignIdStr = convexIdToString(campaign._id);
+      console.log("Using campaign ID (string):", campaignIdStr);
+
+      // Call the Convex mutation with the string ID
       const result = await disableTwitterMutation({
-        campaignId,
+        campaignId: campaignIdStr,
       });
 
       console.log("Twitter disable result:", result);
@@ -202,11 +208,13 @@ export function useCampaignDetail(campaignId: string) {
       console.log("Creating post for campaign:", campaign._id);
       console.log("Campaign ID type:", typeof campaign._id);
 
-      // Call the Convex mutation
-      // Make sure the campaign ID is properly handled
-      const campaignId = campaign._id;
+      // Convert the ID to a string format that Convex can handle
+      const campaignIdStr = convexIdToString(campaign._id);
+      console.log("Using campaign ID (string):", campaignIdStr);
+
+      // Call the Convex mutation with the string ID
       const postId = await createPostMutation({
-        campaignId,
+        campaignId: campaignIdStr,
         title: data.title,
         content: data.content,
         imageUrl: data.imageUrl,
@@ -243,7 +251,7 @@ export function useCampaignDetail(campaignId: string) {
     try {
       // Call the actual Convex mutation
       await updatePostMutation({
-        postId,
+        postId: convexIdToString(postId),
         ...data,
       });
 
@@ -269,7 +277,7 @@ export function useCampaignDetail(campaignId: string) {
     try {
       // Call the actual Convex mutation
       await deletePostMutation({
-        postId,
+        postId: convexIdToString(postId),
       });
 
       toast({
@@ -294,7 +302,7 @@ export function useCampaignDetail(campaignId: string) {
     try {
       // Call the actual Convex mutation
       await publishToTwitterMutation({
-        postId,
+        postId: convexIdToString(postId),
       });
 
       toast({
@@ -321,7 +329,7 @@ export function useCampaignDetail(campaignId: string) {
     try {
       // Call the actual Convex mutation
       await cancelScheduledPostMutation({
-        postId,
+        postId: convexIdToString(postId),
       });
 
       toast({

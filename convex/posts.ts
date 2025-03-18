@@ -4,7 +4,7 @@ import { Id } from "./_generated/dataModel";
 
 // Get all posts for a campaign
 export const getCampaignPosts = query({
-  args: { campaignId: v.id("campaigns") },
+  args: { campaignId: v.string() },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -13,16 +13,19 @@ export const getCampaignPosts = query({
 
     const tokenIdentifier = identity.subject;
 
+    // Convert string ID to Convex ID
+    const campaignId = args.campaignId as Id<"campaigns">;
+
     // Check if user is a member of the campaign
     const membership = await ctx.db
       .query("campaignMembers")
       .withIndex("by_campaign_and_user", (q) =>
-        q.eq("campaignId", args.campaignId).eq("userId", tokenIdentifier),
+        q.eq("campaignId", campaignId).eq("userId", tokenIdentifier),
       )
       .first();
 
     // Get the campaign to check visibility
-    const campaign = await ctx.db.get(args.campaignId);
+    const campaign = await ctx.db.get(campaignId);
     if (!campaign) {
       throw new Error("Campaign not found");
     }
@@ -35,7 +38,7 @@ export const getCampaignPosts = query({
     // Get all posts for the campaign
     const posts = await ctx.db
       .query("campaignPosts")
-      .withIndex("by_campaign", (q) => q.eq("campaignId", args.campaignId))
+      .withIndex("by_campaign", (q) => q.eq("campaignId", campaignId))
       .order("desc")
       .collect();
 
@@ -49,7 +52,7 @@ export const getCampaignPosts = query({
 // Create a new post
 export const createPost = mutation({
   args: {
-    campaignId: v.id("campaigns"),
+    campaignId: v.string(),
     title: v.string(),
     content: v.string(),
     imageUrl: v.optional(v.string()),
@@ -65,11 +68,14 @@ export const createPost = mutation({
 
     const tokenIdentifier = identity.subject;
 
+    // Convert string ID to Convex ID
+    const campaignId = args.campaignId as Id<"campaigns">;
+
     // Check if user is a member of the campaign
     const membership = await ctx.db
       .query("campaignMembers")
       .withIndex("by_campaign_and_user", (q) =>
-        q.eq("campaignId", args.campaignId).eq("userId", tokenIdentifier),
+        q.eq("campaignId", campaignId).eq("userId", tokenIdentifier),
       )
       .first();
 
@@ -79,7 +85,7 @@ export const createPost = mutation({
 
     // Create the post
     const postId = await ctx.db.insert("campaignPosts", {
-      campaignId: args.campaignId,
+      campaignId: campaignId,
       title: args.title,
       content: args.content,
       imageUrl: args.imageUrl,
@@ -98,7 +104,7 @@ export const createPost = mutation({
         scheduledFor: args.scheduledFor,
         data: {
           postId,
-          campaignId: args.campaignId,
+          campaignId: campaignId,
           content: args.content,
           imageUrl: args.imageUrl,
         },
@@ -109,9 +115,9 @@ export const createPost = mutation({
     }
 
     // Update campaign post count
-    const campaign = await ctx.db.get(args.campaignId);
+    const campaign = await ctx.db.get(campaignId);
     if (campaign) {
-      await ctx.db.patch(args.campaignId, {
+      await ctx.db.patch(campaignId, {
         updatedAt: Date.now(),
       });
     }
@@ -123,7 +129,7 @@ export const createPost = mutation({
 // Update a post
 export const updatePost = mutation({
   args: {
-    postId: v.id("campaignPosts"),
+    postId: v.string(),
     title: v.optional(v.string()),
     content: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
@@ -149,8 +155,11 @@ export const updatePost = mutation({
 
     const tokenIdentifier = identity.subject;
 
+    // Convert string ID to Convex ID
+    const postId = args.postId as Id<"campaignPosts">;
+
     // Get the post
-    const post = await ctx.db.get(args.postId);
+    const post = await ctx.db.get(postId);
     if (!post) {
       throw new Error("Post not found");
     }
@@ -195,7 +204,7 @@ export const updatePost = mutation({
     if (args.serverJobId !== undefined)
       updateData.serverJobId = args.serverJobId;
 
-    await ctx.db.patch(args.postId, updateData);
+    await ctx.db.patch(postId, updateData);
 
     // If the post status changed to scheduled, create a scheduled job
     if (
@@ -208,7 +217,7 @@ export const updatePost = mutation({
         status: "pending",
         scheduledFor: args.scheduledFor,
         data: {
-          postId: args.postId,
+          postId: postId,
           campaignId: post.campaignId,
           content: args.content || post.content,
           imageUrl: args.imageUrl || post.imageUrl,
@@ -219,14 +228,14 @@ export const updatePost = mutation({
       });
     }
 
-    return args.postId;
+    return postId;
   },
 });
 
 // Delete a post
 export const deletePost = mutation({
   args: {
-    postId: v.id("campaignPosts"),
+    postId: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -236,8 +245,11 @@ export const deletePost = mutation({
 
     const tokenIdentifier = identity.subject;
 
+    // Convert string ID to Convex ID
+    const postId = args.postId as Id<"campaignPosts">;
+
     // Get the post
-    const post = await ctx.db.get(args.postId);
+    const post = await ctx.db.get(postId);
     if (!post) {
       throw new Error("Post not found");
     }
@@ -261,7 +273,7 @@ export const deletePost = mutation({
     }
 
     // Delete the post
-    await ctx.db.delete(args.postId);
+    await ctx.db.delete(postId);
 
     // Delete any scheduled jobs for this post
     const scheduledJobs = await ctx.db
@@ -272,7 +284,7 @@ export const deletePost = mutation({
       .collect();
 
     for (const job of scheduledJobs) {
-      if (job.data.postId === args.postId) {
+      if (job.data.postId === postId) {
         await ctx.db.delete(job._id);
       }
     }
@@ -283,7 +295,7 @@ export const deletePost = mutation({
 
 // Get a single post by ID
 export const getPost = query({
-  args: { postId: v.id("campaignPosts") },
+  args: { postId: v.string() },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -292,8 +304,11 @@ export const getPost = query({
 
     const tokenIdentifier = identity.subject;
 
+    // Convert string ID to Convex ID
+    const postId = args.postId as Id<"campaignPosts">;
+
     // Get the post
-    const post = await ctx.db.get(args.postId);
+    const post = await ctx.db.get(postId);
     if (!post) {
       throw new Error("Post not found");
     }
@@ -334,7 +349,7 @@ export const getPost = query({
 
 // Get scheduled posts
 export const getScheduledPosts = query({
-  args: { campaignId: v.optional(v.id("campaigns")) },
+  args: { campaignId: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -346,11 +361,14 @@ export const getScheduledPosts = query({
     let scheduledPosts;
 
     if (args.campaignId) {
+      // Convert string ID to Convex ID
+      const campaignId = args.campaignId as Id<"campaigns">;
+
       // Check if user is a member of the campaign
       const membership = await ctx.db
         .query("campaignMembers")
         .withIndex("by_campaign_and_user", (q) =>
-          q.eq("campaignId", args.campaignId).eq("userId", tokenIdentifier),
+          q.eq("campaignId", campaignId).eq("userId", tokenIdentifier),
         )
         .first();
 
@@ -364,7 +382,7 @@ export const getScheduledPosts = query({
       scheduledPosts = await ctx.db
         .query("campaignPosts")
         .withIndex("by_campaign_and_status", (q) =>
-          q.eq("campaignId", args.campaignId).eq("status", "scheduled"),
+          q.eq("campaignId", campaignId).eq("status", "scheduled"),
         )
         .collect();
     } else {
@@ -406,7 +424,7 @@ export const getScheduledPosts = query({
 // Publish a post to Twitter
 export const publishToTwitter = mutation({
   args: {
-    postId: v.id("campaignPosts"),
+    postId: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -416,8 +434,11 @@ export const publishToTwitter = mutation({
 
     const tokenIdentifier = identity.subject;
 
+    // Convert string ID to Convex ID
+    const postId = args.postId as Id<"campaignPosts">;
+
     // Get the post
-    const post = await ctx.db.get(args.postId);
+    const post = await ctx.db.get(postId);
     if (!post) {
       throw new Error("Post not found");
     }
@@ -442,7 +463,7 @@ export const publishToTwitter = mutation({
 
     // In a real implementation, this would call the Twitter API
     // For now, we'll just update the post status
-    await ctx.db.patch(args.postId, {
+    await ctx.db.patch(postId, {
       status: "published",
       publishedAt: Date.now(),
       sharedOnTwitter: true,
@@ -461,7 +482,7 @@ export const publishToTwitter = mutation({
 // Cancel a scheduled post
 export const cancelScheduledPost = mutation({
   args: {
-    postId: v.id("campaignPosts"),
+    postId: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -471,8 +492,11 @@ export const cancelScheduledPost = mutation({
 
     const tokenIdentifier = identity.subject;
 
+    // Convert string ID to Convex ID
+    const postId = args.postId as Id<"campaignPosts">;
+
     // Get the post
-    const post = await ctx.db.get(args.postId);
+    const post = await ctx.db.get(postId);
     if (!post) {
       throw new Error("Post not found");
     }
@@ -501,7 +525,7 @@ export const cancelScheduledPost = mutation({
     }
 
     // Update the post status
-    await ctx.db.patch(args.postId, {
+    await ctx.db.patch(postId, {
       status: "draft",
       scheduledFor: null,
       updatedAt: Date.now(),
@@ -516,7 +540,7 @@ export const cancelScheduledPost = mutation({
       .collect();
 
     for (const job of scheduledJobs) {
-      if (job.data.postId === args.postId) {
+      if (job.data.postId === postId) {
         await ctx.db.delete(job._id);
       }
     }
