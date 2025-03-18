@@ -3,54 +3,58 @@ import { internalMutation, internalQuery } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 
 // Internal functions for posts
-export const getPostInternal = internalQuery({
-  args: { postId: v.id("campaignPosts") },
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.postId);
-  },
-});
+export const posts = {
+  getPostInternal: internalQuery({
+    args: { postId: v.id("campaignPosts") },
+    handler: async (ctx, args) => {
+      return await ctx.db.get(args.postId);
+    },
+  }),
 
-export const updatePostInternal = internalMutation({
-  args: {
-    postId: v.id("campaignPosts"),
-    status: v.optional(v.string()),
-    publishedAt: v.optional(v.number()),
-    sharedOnTwitter: v.optional(v.boolean()),
-    twitterPostId: v.optional(v.string()),
-    twitterStats: v.optional(
-      v.object({
-        likes: v.number(),
-        retweets: v.number(),
-        replies: v.number(),
-      }),
-    ),
-  },
-  handler: async (ctx, args) => {
-    const updateData: any = {
-      updatedAt: Date.now(),
-    };
+  updatePostInternal: internalMutation({
+    args: {
+      postId: v.id("campaignPosts"),
+      status: v.optional(v.string()),
+      publishedAt: v.optional(v.number()),
+      sharedOnTwitter: v.optional(v.boolean()),
+      twitterPostId: v.optional(v.string()),
+      twitterStats: v.optional(
+        v.object({
+          likes: v.number(),
+          retweets: v.number(),
+          replies: v.number(),
+        }),
+      ),
+    },
+    handler: async (ctx, args) => {
+      const updateData: any = {
+        updatedAt: Date.now(),
+      };
 
-    if (args.status !== undefined) updateData.status = args.status;
-    if (args.publishedAt !== undefined)
-      updateData.publishedAt = args.publishedAt;
-    if (args.sharedOnTwitter !== undefined)
-      updateData.sharedOnTwitter = args.sharedOnTwitter;
-    if (args.twitterPostId !== undefined)
-      updateData.twitterPostId = args.twitterPostId;
-    if (args.twitterStats !== undefined)
-      updateData.twitterStats = args.twitterStats;
+      if (args.status !== undefined) updateData.status = args.status;
+      if (args.publishedAt !== undefined)
+        updateData.publishedAt = args.publishedAt;
+      if (args.sharedOnTwitter !== undefined)
+        updateData.sharedOnTwitter = args.sharedOnTwitter;
+      if (args.twitterPostId !== undefined)
+        updateData.twitterPostId = args.twitterPostId;
+      if (args.twitterStats !== undefined)
+        updateData.twitterStats = args.twitterStats;
 
-    await ctx.db.patch(args.postId, updateData);
-  },
-});
+      await ctx.db.patch(args.postId, updateData);
+    },
+  }),
+};
 
 // Internal functions for campaigns
-export const getCampaignInternal = internalQuery({
-  args: { campaignId: v.id("campaigns") },
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.campaignId);
-  },
-});
+export const campaigns = {
+  getCampaignInternal: internalQuery({
+    args: { campaignId: v.id("campaigns") },
+    handler: async (ctx, args) => {
+      return await ctx.db.get(args.campaignId);
+    },
+  }),
+};
 
 // Process scheduled posts
 export const processScheduledJobs = internalMutation({
@@ -150,3 +154,34 @@ export const processScheduledJobs = internalMutation({
     return results;
   },
 });
+
+// Add Twitter internal functions
+export const twitter = {
+  getTwitterIntegrationInternal: internalQuery({
+    args: {
+      userId: v.string(),
+      campaignId: v.optional(v.id("campaigns")),
+    },
+    handler: async (ctx, args) => {
+      // First try to get campaign-specific integration if campaignId is provided
+      if (args.campaignId) {
+        const campaignIntegration = await ctx.db
+          .query("twitterIntegrations")
+          .withIndex("by_user_and_campaign", (q) =>
+            q.eq("userId", args.userId).eq("campaignId", args.campaignId),
+          )
+          .first();
+
+        if (campaignIntegration && campaignIntegration.status === "active") {
+          return campaignIntegration;
+        }
+      }
+
+      // Fall back to user's general integration
+      return await ctx.db
+        .query("twitterIntegrations")
+        .withIndex("by_user", (q) => q.eq("userId", args.userId))
+        .first();
+    },
+  }),
+};

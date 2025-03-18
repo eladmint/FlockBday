@@ -281,7 +281,7 @@ export const getTwitterStatus = query({
 // Check campaign Twitter status
 export const getCampaignTwitterStatus = query({
   args: {
-    campaignId: v.id("campaigns"),
+    campaignId: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -290,7 +290,7 @@ export const getCampaignTwitterStatus = query({
     }
 
     const tokenIdentifier = identity.subject;
-    const campaignId = args.campaignId;
+    const campaignId = args.campaignId as unknown as Id<"campaigns">;
 
     // Get the campaign
     const campaign = await ctx.db.get(campaignId);

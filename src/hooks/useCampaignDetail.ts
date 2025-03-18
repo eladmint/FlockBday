@@ -46,6 +46,13 @@ export function useCampaignDetail(campaignId: string) {
     campaign ? { campaignId: convexIdToString(campaign._id) } : "skip",
   );
 
+  // Log Twitter status for debugging
+  useEffect(() => {
+    if (twitterStatus) {
+      console.log("Twitter status for campaign:", twitterStatus);
+    }
+  }, [twitterStatus]);
+
   // Mutations
   const enableTwitterMutation = useMutation(
     api.twitter.enableTwitterForCampaign,
@@ -93,9 +100,12 @@ export function useCampaignDetail(campaignId: string) {
       // Use the campaign ID directly - Convex will handle the conversion
       console.log("Using campaign ID:", campaign._id);
 
-      // Call the Convex mutation with the ID
+      // Call the Convex mutation with the string ID
+      const campaignIdStr = convexIdToString(campaign._id);
+      console.log("Enabling Twitter with campaign ID (string):", campaignIdStr);
+
       const result = await enableTwitterMutation({
-        campaignId: convexIdToString(campaign._id),
+        campaignId: campaignIdStr,
       });
 
       console.log("Twitter enable result:", result);
@@ -148,9 +158,15 @@ export function useCampaignDetail(campaignId: string) {
       // Use the campaign ID directly - Convex will handle the conversion
       console.log("Using campaign ID:", campaign._id);
 
-      // Call the Convex mutation with the ID
+      // Call the Convex mutation with the string ID
+      const campaignIdStr = convexIdToString(campaign._id);
+      console.log(
+        "Disabling Twitter with campaign ID (string):",
+        campaignIdStr,
+      );
+
       const result = await disableTwitterMutation({
-        campaignId: convexIdToString(campaign._id),
+        campaignId: campaignIdStr,
       });
 
       console.log("Twitter disable result:", result);
