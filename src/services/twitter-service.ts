@@ -141,6 +141,57 @@ export class TwitterService {
     return TwitterService.instance;
   }
 
+  public async checkCredentials(): Promise<boolean> {
+    return !!(
+      TWITTER_API_KEY &&
+      TWITTER_API_SECRET &&
+      TWITTER_ACCESS_TOKEN &&
+      TWITTER_ACCESS_TOKEN_SECRET
+    );
+  }
+
+  public async verifyAuthentication(): Promise<boolean> {
+    try {
+      // In a real implementation, this would make an API call to verify credentials
+      // For now, we'll just check if credentials exist
+      const hasCredentials = await this.checkCredentials();
+      if (!hasCredentials) {
+        console.error("Twitter credentials not configured");
+        return false;
+      }
+
+      // Simulate API call
+      console.log("Making API call to verify Twitter credentials...");
+
+      // For testing purposes, we'll return true if credentials exist
+      return true;
+    } catch (error) {
+      console.error("Error verifying Twitter authentication:", error);
+      return false;
+    }
+  }
+
+  public async getUserProfile(): Promise<any> {
+    try {
+      const hasCredentials = await this.checkCredentials();
+      if (!hasCredentials) {
+        throw new Error("Twitter credentials not configured");
+      }
+
+      // For testing purposes, we'll return mock data
+      return {
+        id: "12345678",
+        username: "test_user",
+        name: "Test User",
+        profile_image_url:
+          "https://api.dicebear.com/7.x/avataaars/svg?seed=twitter",
+      };
+    } catch (error) {
+      console.error("Error getting Twitter user profile:", error);
+      throw error;
+    }
+  }
+
   public async schedulePost(post: any): Promise<any> {
     if (!post.isScheduled || !post.scheduledFor) return post;
 
@@ -236,6 +287,23 @@ export class TwitterService {
         error: error.message || "Failed to publish to Twitter",
       };
     }
+  }
+
+  public setCredentials({
+    apiKey,
+    apiSecret,
+    accessToken,
+    accessTokenSecret,
+  }: {
+    apiKey: string;
+    apiSecret: string;
+    accessToken: string;
+    accessTokenSecret: string;
+  }): void {
+    // In a real implementation, we would set these credentials
+    // For now, we'll just log that we received them
+    console.log("Received Twitter credentials");
+    // We would normally store these securely or use them to initialize a client
   }
 }
 

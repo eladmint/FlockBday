@@ -43,6 +43,12 @@ export function Navbar() {
                   <NavLink to="/dashboard" active={isActive("/dashboard")}>
                     Dashboard
                   </NavLink>
+                  <NavLink
+                    to="/twitter-test"
+                    active={isActive("/twitter-test")}
+                  >
+                    Twitter Test
+                  </NavLink>
                 </div>
               </Authenticated>
             </div>

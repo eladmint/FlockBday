@@ -14,6 +14,7 @@ import TermsOfUse from "./pages/terms";
 import PrivacyPolicy from "./pages/privacy";
 import SignInPage from "./pages/sign-in";
 import SignUpPage from "./pages/sign-up";
+import TwitterTest from "./pages/twitter-test";
 import ProtectedRoute from "./components/wrappers/ProtectedRoute";
 import { LoadingSpinner } from "./components/loading-spinner";
 
@@ -58,6 +59,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CampaignDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/twitter-test"
+          element={
+            <ProtectedRoute>
+              <TwitterTest />
             </ProtectedRoute>
           }
         />
