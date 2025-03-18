@@ -128,7 +128,7 @@ export const disconnectTwitterAccount = mutation({
 // Enable Twitter for a campaign
 export const enableTwitterForCampaign = mutation({
   args: {
-    campaignId: v.id("campaigns"),
+    campaignId: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -137,7 +137,7 @@ export const enableTwitterForCampaign = mutation({
     }
 
     const tokenIdentifier = identity.subject;
-    const campaignId = args.campaignId;
+    const campaignId = args.campaignId as unknown as Id<"campaigns">;
 
     // Check if user is a member of the campaign with appropriate permissions
     const membership = await ctx.db
@@ -203,7 +203,7 @@ export const enableTwitterForCampaign = mutation({
 // Disable Twitter for a campaign
 export const disableTwitterForCampaign = mutation({
   args: {
-    campaignId: v.id("campaigns"),
+    campaignId: v.string(),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -212,7 +212,7 @@ export const disableTwitterForCampaign = mutation({
     }
 
     const tokenIdentifier = identity.subject;
-    const campaignId = args.campaignId;
+    const campaignId = args.campaignId as unknown as Id<"campaigns">;
 
     // Check if user is a member of the campaign with appropriate permissions
     const membership = await ctx.db
