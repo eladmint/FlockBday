@@ -90,13 +90,12 @@ export function useCampaignDetail(campaignId: string) {
       console.log("Enabling Twitter for campaign:", campaign._id);
       console.log("Campaign ID type:", typeof campaign._id);
 
-      // Convert the ID to a string format that Convex can handle
-      const campaignIdStr = convexIdToString(campaign._id);
-      console.log("Using campaign ID (string):", campaignIdStr);
+      // Use the campaign ID directly - Convex will handle the conversion
+      console.log("Using campaign ID:", campaign._id);
 
-      // Call the Convex mutation with the string ID
+      // Call the Convex mutation with the ID
       const result = await enableTwitterMutation({
-        campaignId: campaignIdStr,
+        campaignId: campaign._id,
       });
 
       console.log("Twitter enable result:", result);
@@ -146,13 +145,12 @@ export function useCampaignDetail(campaignId: string) {
       console.log("Disabling Twitter for campaign:", campaign._id);
       console.log("Campaign ID type:", typeof campaign._id);
 
-      // Convert the ID to a string format that Convex can handle
-      const campaignIdStr = convexIdToString(campaign._id);
-      console.log("Using campaign ID (string):", campaignIdStr);
+      // Use the campaign ID directly - Convex will handle the conversion
+      console.log("Using campaign ID:", campaign._id);
 
-      // Call the Convex mutation with the string ID
+      // Call the Convex mutation with the ID
       const result = await disableTwitterMutation({
-        campaignId: campaignIdStr,
+        campaignId: campaign._id,
       });
 
       console.log("Twitter disable result:", result);
