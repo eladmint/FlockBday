@@ -4,7 +4,7 @@ import { Id } from "./_generated/dataModel";
 
 // Get all posts for a campaign
 export const getCampaignPosts = query({
-  args: { campaignId: v.string() },
+  args: { campaignId: v.any() },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -52,7 +52,7 @@ export const getCampaignPosts = query({
 // Create a new post
 export const createPost = mutation({
   args: {
-    campaignId: v.string(),
+    campaignId: v.any(),
     title: v.string(),
     content: v.string(),
     imageUrl: v.optional(v.string()),
@@ -68,8 +68,35 @@ export const createPost = mutation({
 
     const tokenIdentifier = identity.subject;
 
-    // Convert string ID to Convex ID
-    const campaignId = args.campaignId as Id<"campaigns">;
+    // Handle the campaign ID regardless of its format
+    let campaignId;
+    try {
+      // If it's already an ID object
+      if (typeof args.campaignId === "object" && args.campaignId !== null) {
+        campaignId = args.campaignId;
+      } else {
+        // Try to get the campaign directly first
+        const campaign = await ctx.db.get(args.campaignId as Id<"campaigns">);
+        if (campaign) {
+          campaignId = args.campaignId;
+        } else {
+          // If that fails, try to find the campaign by string ID
+          console.log("Looking up campaign by string ID:", args.campaignId);
+          const campaigns = await ctx.db.query("campaigns").collect();
+          const campaign = campaigns.find(
+            (c) => c._id.toString() === args.campaignId,
+          );
+          if (campaign) {
+            campaignId = campaign._id;
+          } else {
+            throw new Error("Campaign not found");
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error processing campaign ID:", error);
+      throw new Error(`Invalid campaign ID format: ${args.campaignId}`);
+    }
 
     // Check if user is a member of the campaign
     const membership = await ctx.db
