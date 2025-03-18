@@ -95,7 +95,7 @@ export function useCampaignDetail(campaignId: string) {
 
       // Call the Convex mutation with the ID
       const result = await enableTwitterMutation({
-        campaignId: campaign._id,
+        campaignId: convexIdToString(campaign._id),
       });
 
       console.log("Twitter enable result:", result);
@@ -150,7 +150,7 @@ export function useCampaignDetail(campaignId: string) {
 
       // Call the Convex mutation with the ID
       const result = await disableTwitterMutation({
-        campaignId: campaign._id,
+        campaignId: convexIdToString(campaign._id),
       });
 
       console.log("Twitter disable result:", result);
