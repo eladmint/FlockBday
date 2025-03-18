@@ -1,6 +1,6 @@
 import { CampaignPageLayout } from "@/components/campaign-page-layout";
 import { TwitterTestButton } from "@/components/twitter-test-button";
-import { TwitterApiTester } from "@/components/twitter-api-tester";
+
 import { TwitterConnectButton } from "@/components/twitter-connect-button";
 import {
   Card,
@@ -10,8 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { TwitterService } from "@/services/twitter-service";
@@ -32,7 +31,6 @@ export default function TwitterTestPage() {
         <Tabs defaultValue="test">
           <TabsList className="mb-4">
             <TabsTrigger value="test">Run Tests</TabsTrigger>
-            <TabsTrigger value="credentials">Configure Credentials</TabsTrigger>
             <TabsTrigger value="info">Integration Info</TabsTrigger>
           </TabsList>
 
@@ -47,6 +45,31 @@ export default function TwitterTestPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
+                  {isConnected ? (
+                    <div className="flex items-center space-x-4 mb-4">
+                      {profileImageUrl && (
+                        <img
+                          src={profileImageUrl}
+                          alt="Twitter Profile"
+                          className="w-12 h-12 rounded-full"
+                        />
+                      )}
+                      <div>
+                        <p className="font-medium">@{username}</p>
+                        <p className="text-sm text-gray-500">
+                          Connected to Twitter via Convex
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-yellow-50 p-4 rounded-md mb-4">
+                      <p className="text-sm text-yellow-800">
+                        Not connected to Twitter. Please check your Convex
+                        configuration.
+                      </p>
+                    </div>
+                  )}
+
                   <p className="text-sm text-gray-600">
                     Click the button below to run a series of tests on your
                     Twitter API integration. The tests will check if your
@@ -65,48 +88,6 @@ export default function TwitterTestPage() {
                       Open your browser console (F12 or Cmd+Option+I) to view
                       detailed test results.
                     </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="credentials">
-            <Card>
-              <CardHeader>
-                <CardTitle>Twitter Connection Status</CardTitle>
-                <CardDescription>
-                  {isConnected
-                    ? `Connected as @${username}`
-                    : "Not connected to Twitter"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {isConnected && (
-                    <div className="flex items-center space-x-4">
-                      {profileImageUrl && (
-                        <img
-                          src={profileImageUrl}
-                          alt="Twitter Profile"
-                          className="w-12 h-12 rounded-full"
-                        />
-                      )}
-                      <div>
-                        <p className="font-medium">@{username}</p>
-                        <p className="text-sm text-gray-500">
-                          Connected to Twitter
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex justify-center">
-                    <TwitterConnectButton />
-                  </div>
-
-                  <div className="mt-4">
-                    <TwitterApiTester />
                   </div>
                 </div>
               </CardContent>
