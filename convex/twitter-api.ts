@@ -1,12 +1,13 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
+// Import the real Twitter API library - this is safe on the server side
 import { TwitterApi } from "twitter-api-v2";
 
 // This file contains server-side actions that interact with the Twitter API
 // These actions run in a Node.js environment and can use the Twitter API directly
 
 // Helper function to create a Twitter client
-function createTwitterClient(accessToken: string, accessTokenSecret: string) {
+function createTwitterClient(accessToken?: string, accessTokenSecret?: string) {
   const apiKey = process.env.TWITTER_API_KEY;
   const apiSecret = process.env.TWITTER_API_SECRET;
 
@@ -14,11 +15,29 @@ function createTwitterClient(accessToken: string, accessTokenSecret: string) {
     throw new Error("Twitter API credentials not configured on the server");
   }
 
+  // If access token and secret are provided, use them
+  if (accessToken && accessTokenSecret) {
+    return new TwitterApi({
+      appKey: apiKey,
+      appSecret: apiSecret,
+      accessToken: accessToken,
+      accessSecret: accessTokenSecret,
+    });
+  }
+
+  // Otherwise use the server's default credentials
+  const defaultAccessToken = process.env.TWITTER_ACCESS_TOKEN;
+  const defaultAccessTokenSecret = process.env.TWITTER_ACCESS_TOKEN_SECRET;
+
+  if (!defaultAccessToken || !defaultAccessTokenSecret) {
+    throw new Error("Default Twitter credentials not configured on the server");
+  }
+
   return new TwitterApi({
     appKey: apiKey,
     appSecret: apiSecret,
-    accessToken: accessToken,
-    accessSecret: accessTokenSecret,
+    accessToken: defaultAccessToken,
+    accessSecret: defaultAccessTokenSecret,
   });
 }
 
@@ -55,13 +74,14 @@ export const verifyTwitterCredentials = action({
 export const postTweet = action({
   args: {
     userId: v.string(),
-    accessToken: v.string(),
-    accessTokenSecret: v.string(),
+    accessToken: v.optional(v.string()),
+    accessTokenSecret: v.optional(v.string()),
     content: v.string(),
     imageUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     try {
+      // Create Twitter client with provided credentials or fall back to server credentials
       const twitterClient = createTwitterClient(
         args.accessToken,
         args.accessTokenSecret,
@@ -96,9 +116,9 @@ export const postTweet = action({
 // Action to get tweet details
 export const getTweetDetails = action({
   args: {
-    accessToken: v.string(),
-    accessTokenSecret: v.string(),
     tweetId: v.string(),
+    accessToken: v.optional(v.string()),
+    accessTokenSecret: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     try {
@@ -118,6 +138,35 @@ export const getTweetDetails = action({
       };
     } catch (error) {
       console.error("Error getting tweet details:", error);
+      return { success: false, error: error.message };
+    }
+  },
+});
+
+// Action to get user profile by username
+export const getUserByUsername = action({
+  args: {
+    username: v.string(),
+    accessToken: v.optional(v.string()),
+    accessTokenSecret: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    try {
+      const twitterClient = createTwitterClient(
+        args.accessToken,
+        args.accessTokenSecret,
+      );
+
+      const user = await twitterClient.v2.userByUsername(args.username, {
+        "user.fields": ["profile_image_url", "description", "public_metrics"],
+      });
+
+      return {
+        success: true,
+        user: user.data,
+      };
+    } catch (error) {
+      console.error("Error getting user profile:", error);
       return { success: false, error: error.message };
     }
   },

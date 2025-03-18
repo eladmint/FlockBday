@@ -1,4 +1,5 @@
 // Mock Twitter service implementation to avoid dependency on twitter-api-v2
+// This provides a complete mock implementation for testing and development
 
 export class MockTwitterApi {
   private appKey: string;
@@ -29,7 +30,7 @@ export class MockTwitterApi {
         },
       };
     },
-    singleTweet: async (id: string, options: any) => {
+    singleTweet: async (id: string, options: any = {}) => {
       console.log(`[MOCK] Getting tweet details for: ${id}`);
       return {
         data: {
@@ -55,6 +56,25 @@ export class MockTwitterApi {
           profile_image_url:
             "https://api.dicebear.com/7.x/avataaars/svg?seed=mockuser",
           description: "This is a mock Twitter user for testing",
+          public_metrics: {
+            followers_count: 100,
+            following_count: 50,
+            tweet_count: 200,
+            listed_count: 5,
+          },
+        },
+      };
+    },
+    // Additional mock methods to match the real API
+    userByUsername: async (username: string, options?: any) => {
+      console.log(`[MOCK] Getting user by username: ${username}`);
+      return {
+        data: {
+          id: `mock-user-${username}`,
+          username: username,
+          name: `Mock ${username}`,
+          profile_image_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`,
+          description: `This is a mock Twitter user for ${username}`,
           public_metrics: {
             followers_count: 100,
             following_count: 50,
