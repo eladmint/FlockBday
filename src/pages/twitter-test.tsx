@@ -16,9 +16,17 @@ import { useState } from "react";
 import { TwitterService } from "@/services/twitter-service";
 import { useToast } from "@/components/ui/use-toast";
 import { useTwitterIntegration } from "@/hooks/useTwitterIntegration";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export default function TwitterTestPage() {
-  const { isConnected, username, profileImageUrl } = useTwitterIntegration();
+  // Use direct query to get Twitter status from Convex
+  const twitterStatus = useQuery(api.twitter.getTwitterStatus) || {
+    connected: false,
+    username: undefined,
+    profileImageUrl: undefined,
+  };
+  const { isConnected, username, profileImageUrl } = twitterStatus;
   const { toast } = useToast();
 
   return (
@@ -31,7 +39,6 @@ export default function TwitterTestPage() {
         <Tabs defaultValue="test">
           <TabsList className="mb-4">
             <TabsTrigger value="test">Run Tests</TabsTrigger>
-            <TabsTrigger value="info">Integration Info</TabsTrigger>
           </TabsList>
 
           <TabsContent value="test">
