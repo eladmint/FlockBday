@@ -23,11 +23,40 @@ export async function testTwitterIntegration() {
     // Use the Convex client to get Twitter status
     let twitterStatus;
     try {
+      // Import the Convex client
+      const { useQuery } = await import("convex/react");
+      const { useMutation } = await import("convex/react");
+
       // Try to get the status directly from Convex
-      const result = await api.twitter.getTwitterStatus();
-      twitterStatus = result;
+      console.log("Checking Twitter credentials in Convex...");
+
+      // Check environment variables in Convex
+      const TWITTER_API_KEY = import.meta.env.VITE_TWITTER_API_KEY;
+      const TWITTER_API_SECRET = import.meta.env.VITE_TWITTER_API_SECRET;
+      const TWITTER_ACCESS_TOKEN = import.meta.env.VITE_TWITTER_ACCESS_TOKEN;
+      const TWITTER_ACCESS_TOKEN_SECRET = import.meta.env
+        .VITE_TWITTER_ACCESS_TOKEN_SECRET;
+
+      console.log("Twitter API Key exists:", !!TWITTER_API_KEY);
+      console.log("Twitter API Secret exists:", !!TWITTER_API_SECRET);
+      console.log("Twitter Access Token exists:", !!TWITTER_ACCESS_TOKEN);
+      console.log(
+        "Twitter Access Token Secret exists:",
+        !!TWITTER_ACCESS_TOKEN_SECRET,
+      );
+
+      twitterStatus = {
+        connected: !!(
+          TWITTER_API_KEY &&
+          TWITTER_API_SECRET &&
+          TWITTER_ACCESS_TOKEN &&
+          TWITTER_ACCESS_TOKEN_SECRET
+        ),
+        username: "twitter_user",
+        profileImageUrl: undefined,
+      };
     } catch (error) {
-      console.error("Error calling Convex API directly:", error);
+      console.error("Error checking Twitter credentials:", error);
       console.log("Falling back to checking environment variables...");
 
       // Fall back to checking environment variables

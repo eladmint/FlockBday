@@ -14,7 +14,11 @@ export function TwitterTestButton() {
   const handleTest = async () => {
     setIsLoading(true);
     try {
+      console.log("Starting Twitter integration test...");
       await runTest();
+      console.log("Twitter integration test completed.");
+    } catch (error) {
+      console.error("Twitter integration test failed:", error);
     } finally {
       setIsLoading(false);
     }
