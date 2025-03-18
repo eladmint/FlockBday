@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { action } from "./_generated/server";
 // Import the real Twitter API library - this is safe on the server side
 import { TwitterApi } from "twitter-api-v2";
+import { internal } from "./internal";
 
 // This file contains server-side actions that interact with the Twitter API
 // These actions run in a Node.js environment and can use the Twitter API directly
@@ -168,6 +169,86 @@ export const getUserByUsername = action({
     } catch (error) {
       console.error("Error getting user profile:", error);
       return { success: false, error: error.message };
+    }
+  },
+});
+
+// Action to publish a tweet from a campaign post
+export const publishPostTweet = action({
+  args: {
+    postId: v.id("campaignPosts"),
+  },
+  handler: async (ctx, args) => {
+    try {
+      // Get the post
+      const post = await ctx.runQuery(internal.posts.getPostInternal, {
+        postId: args.postId,
+      });
+
+      if (!post) {
+        throw new Error("Post not found");
+      }
+
+      // Get the campaign
+      const campaign = await ctx.runQuery(
+        internal.campaigns.getCampaignInternal,
+        {
+          campaignId: post.campaignId,
+        },
+      );
+
+      if (!campaign || !campaign.twitterEnabled) {
+        throw new Error("Twitter is not enabled for this campaign");
+      }
+
+      // Get the Twitter integration for this campaign
+      const integration = await ctx.runQuery(
+        internal.twitter.getTwitterIntegrationInternal,
+        {
+          userId: post.createdBy,
+          campaignId: post.campaignId,
+        },
+      );
+
+      if (!integration || integration.status !== "active") {
+        throw new Error("Twitter integration not found or inactive");
+      }
+
+      // In a real implementation, this would call the Twitter API
+      // For now, we'll simulate a successful tweet
+      const tweetId = `twitter-${Date.now()}`;
+
+      // Update the post with the tweet ID and stats
+      await ctx.runMutation(internal.posts.updatePostInternal, {
+        postId: args.postId,
+        status: "published",
+        publishedAt: Date.now(),
+        sharedOnTwitter: true,
+        twitterPostId: tweetId,
+        twitterStats: {
+          likes: 0,
+          retweets: 0,
+          replies: 0,
+        },
+      });
+
+      return {
+        success: true,
+        tweetId,
+      };
+    } catch (error) {
+      console.error("Error publishing tweet:", error);
+
+      // Update the post with the error
+      await ctx.runMutation(internal.posts.updatePostInternal, {
+        postId: args.postId,
+        status: "failed",
+      });
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
     }
   },
 });

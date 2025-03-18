@@ -138,11 +138,28 @@ export const enableTwitterForCampaign = mutation({
 
     const tokenIdentifier = identity.subject;
 
-    // Validate the campaign ID format before casting
+    // Safely convert string ID to Convex ID
     let campaignId;
     try {
-      campaignId = args.campaignId as unknown as Id<"campaigns">;
+      // First try to get the campaign directly
+      const campaign = await ctx.db.get(args.campaignId as Id<"campaigns">);
+      if (campaign) {
+        campaignId = args.campaignId as Id<"campaigns">;
+      } else {
+        // If that fails, try to find the campaign by string ID
+        console.log("Looking up campaign by string ID:", args.campaignId);
+        const campaigns = await ctx.db.query("campaigns").collect();
+        const campaign = campaigns.find(
+          (c) => c._id.toString() === args.campaignId,
+        );
+        if (campaign) {
+          campaignId = campaign._id;
+        } else {
+          throw new Error("Campaign not found");
+        }
+      }
     } catch (error) {
+      console.error("Error processing campaign ID:", error);
       throw new Error(`Invalid campaign ID format: ${args.campaignId}`);
     }
 
@@ -220,11 +237,28 @@ export const disableTwitterForCampaign = mutation({
 
     const tokenIdentifier = identity.subject;
 
-    // Validate the campaign ID format before casting
+    // Safely convert string ID to Convex ID
     let campaignId;
     try {
-      campaignId = args.campaignId as unknown as Id<"campaigns">;
+      // First try to get the campaign directly
+      const campaign = await ctx.db.get(args.campaignId as Id<"campaigns">);
+      if (campaign) {
+        campaignId = args.campaignId as Id<"campaigns">;
+      } else {
+        // If that fails, try to find the campaign by string ID
+        console.log("Looking up campaign by string ID:", args.campaignId);
+        const campaigns = await ctx.db.query("campaigns").collect();
+        const campaign = campaigns.find(
+          (c) => c._id.toString() === args.campaignId,
+        );
+        if (campaign) {
+          campaignId = campaign._id;
+        } else {
+          throw new Error("Campaign not found");
+        }
+      }
     } catch (error) {
+      console.error("Error processing campaign ID:", error);
       throw new Error(`Invalid campaign ID format: ${args.campaignId}`);
     }
 
@@ -305,11 +339,28 @@ export const getCampaignTwitterStatus = query({
 
     const tokenIdentifier = identity.subject;
 
-    // Validate the campaign ID format before casting
+    // Safely convert string ID to Convex ID
     let campaignId;
     try {
-      campaignId = args.campaignId as unknown as Id<"campaigns">;
+      // First try to get the campaign directly
+      const campaign = await ctx.db.get(args.campaignId as Id<"campaigns">);
+      if (campaign) {
+        campaignId = args.campaignId as Id<"campaigns">;
+      } else {
+        // If that fails, try to find the campaign by string ID
+        console.log("Looking up campaign by string ID:", args.campaignId);
+        const campaigns = await ctx.db.query("campaigns").collect();
+        const campaign = campaigns.find(
+          (c) => c._id.toString() === args.campaignId,
+        );
+        if (campaign) {
+          campaignId = campaign._id;
+        } else {
+          throw new Error("Campaign not found");
+        }
+      }
     } catch (error) {
+      console.error("Error processing campaign ID:", error);
       throw new Error(`Invalid campaign ID format: ${args.campaignId}`);
     }
 

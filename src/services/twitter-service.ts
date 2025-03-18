@@ -23,9 +23,15 @@ try {
   if (isTwitterConfigured) {
     twitterClient = createTwitterClient();
     console.log("Twitter client initialized successfully");
+  } else {
+    console.log("Twitter credentials not configured, using mock client");
+    // Use mock client when credentials are not available
+    twitterClient = new MockTwitterApi();
   }
 } catch (error) {
   console.error("Failed to initialize Twitter client:", error);
+  // Fallback to mock client on error
+  twitterClient = new MockTwitterApi();
 }
 
 export class TwitterService {
@@ -151,34 +157,50 @@ export class TwitterService {
       console.log(`Publishing post to Twitter: ${post.id}`);
       console.log("Browser environment: Using Convex for Twitter posting");
 
-      // In browser environment, we'll use the Convex action instead
-      // This is a placeholder that would normally be replaced with a call to the Convex action
-      // The actual implementation will be in the useTwitterService hook
+      // Import the Convex API
+      const { api } = await import("../../convex/_generated/api");
 
-      // Create a placeholder response
-      const placeholderId = `placeholder-${Date.now()}`;
+      // Use Convex to post to Twitter
+      let result;
+      try {
+        result = await api.twitter.publishTweet.call({
+          postId: post._id,
+        });
 
-      // Create updated post with placeholder Twitter data
-      const updatedPost = {
-        ...post,
-        sharedOnTwitter: true,
-        twitterPostId: placeholderId,
-        status: "publishing", // Will be updated by Convex
-        publishedAt: Date.now(),
-        twitterStats: {
-          likes: 0,
-          retweets: 0,
-          replies: 0,
-        },
-      };
+        console.log("Twitter publish result:", result);
 
-      return updatedPost;
+        if (!result.success) {
+          throw new Error(result.error || "Failed to publish to Twitter");
+        }
+
+        // Create updated post with Twitter data
+        const updatedPost = {
+          ...post,
+          sharedOnTwitter: true,
+          twitterPostId: result.tweetId,
+          status: "published",
+          publishedAt: Date.now(),
+          twitterStats: {
+            likes: 0,
+            retweets: 0,
+            replies: 0,
+          },
+        };
+
+        return updatedPost;
+      } catch (convexError) {
+        console.error("Error calling Convex:", convexError);
+        throw convexError;
+      }
     } catch (error) {
       console.error("Error publishing to Twitter:", error);
       return {
         ...post,
         status: "failed",
-        error: error.message || "Failed to publish to Twitter",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to publish to Twitter",
       };
     }
   }

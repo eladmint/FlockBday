@@ -12,9 +12,11 @@ import { CampaignTabs } from "@/components/campaign-tabs";
 import { CampaignPostsSection } from "@/components/campaign-posts-section";
 import { TwitterTestButton } from "@/components/twitter-test-button";
 import { convexIdToString } from "@/utils/convexHelpers";
+import { useToast } from "@/components/ui/use-toast";
 
 export function CampaignDetail() {
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
   const {
     campaign,
     posts,
@@ -29,6 +31,47 @@ export function CampaignDetail() {
     publishToTwitter,
     cancelScheduledPost,
   } = useCampaignDetail(id || "");
+
+  // Handle Twitter connection with better error handling
+  const handleEnableTwitter = async () => {
+    try {
+      const success = await enableTwitter();
+      if (success) {
+        toast({
+          title: "Twitter Enabled",
+          description: "Twitter publishing has been enabled for this campaign",
+        });
+      }
+    } catch (error) {
+      console.error("Error enabling Twitter:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to enable Twitter",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDisableTwitter = async () => {
+    try {
+      const success = await disableTwitter();
+      if (success) {
+        toast({
+          title: "Twitter Disabled",
+          description: "Twitter publishing has been disabled for this campaign",
+        });
+      }
+    } catch (error) {
+      console.error("Error disabling Twitter:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to disable Twitter",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -52,7 +95,7 @@ export function CampaignDetail() {
             <CampaignStats
               postsCount={posts.length}
               scheduledCount={scheduledPosts.length}
-              collaboratorsCount={3} // This would come from the campaign data
+              collaboratorsCount={campaign.collaboratorsCount || 3}
             />
           </div>
 
@@ -62,8 +105,8 @@ export function CampaignDetail() {
               <TwitterConnect
                 campaignId={id || ""}
                 isConnected={twitterEnabled}
-                onConnect={enableTwitter}
-                onDisconnect={disableTwitter}
+                onConnect={handleEnableTwitter}
+                onDisconnect={handleDisableTwitter}
               />
               {twitterEnabled && campaign._id && (
                 <div className="flex justify-end">
@@ -85,6 +128,7 @@ export function CampaignDetail() {
               onDeletePost={deletePost}
               onPublishToTwitter={publishToTwitter}
               twitterEnabled={twitterEnabled}
+              campaignId={id || ""}
             />
           }
           scheduledTab={
