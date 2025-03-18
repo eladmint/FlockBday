@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query, action } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { internal } from "./internal";
 
 // Connect Twitter account
 export const connectTwitterAccount = mutation({
@@ -127,7 +128,7 @@ export const disconnectTwitterAccount = mutation({
 // Enable Twitter for a campaign
 export const enableTwitterForCampaign = mutation({
   args: {
-    campaignId: v.any(),
+    campaignId: v.id("campaigns"),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -136,36 +137,7 @@ export const enableTwitterForCampaign = mutation({
     }
 
     const tokenIdentifier = identity.subject;
-
-    // Handle the campaign ID regardless of its format
-    let campaignId;
-    try {
-      // If it's already an ID object
-      if (typeof args.campaignId === "object" && args.campaignId !== null) {
-        campaignId = args.campaignId;
-      } else {
-        // Try to get the campaign directly first
-        const campaign = await ctx.db.get(args.campaignId as Id<"campaigns">);
-        if (campaign) {
-          campaignId = args.campaignId;
-        } else {
-          // If that fails, try to find the campaign by string ID
-          console.log("Looking up campaign by string ID:", args.campaignId);
-          const campaigns = await ctx.db.query("campaigns").collect();
-          const campaign = campaigns.find(
-            (c) => c._id.toString() === args.campaignId,
-          );
-          if (campaign) {
-            campaignId = campaign._id;
-          } else {
-            throw new Error("Campaign not found");
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error processing campaign ID:", error);
-      throw new Error(`Invalid campaign ID format: ${args.campaignId}`);
-    }
+    const campaignId = args.campaignId;
 
     // Check if user is a member of the campaign with appropriate permissions
     const membership = await ctx.db
@@ -231,7 +203,7 @@ export const enableTwitterForCampaign = mutation({
 // Disable Twitter for a campaign
 export const disableTwitterForCampaign = mutation({
   args: {
-    campaignId: v.any(),
+    campaignId: v.id("campaigns"),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -240,36 +212,7 @@ export const disableTwitterForCampaign = mutation({
     }
 
     const tokenIdentifier = identity.subject;
-
-    // Handle the campaign ID regardless of its format
-    let campaignId;
-    try {
-      // If it's already an ID object
-      if (typeof args.campaignId === "object" && args.campaignId !== null) {
-        campaignId = args.campaignId;
-      } else {
-        // Try to get the campaign directly first
-        const campaign = await ctx.db.get(args.campaignId as Id<"campaigns">);
-        if (campaign) {
-          campaignId = args.campaignId;
-        } else {
-          // If that fails, try to find the campaign by string ID
-          console.log("Looking up campaign by string ID:", args.campaignId);
-          const campaigns = await ctx.db.query("campaigns").collect();
-          const campaign = campaigns.find(
-            (c) => c._id.toString() === args.campaignId,
-          );
-          if (campaign) {
-            campaignId = campaign._id;
-          } else {
-            throw new Error("Campaign not found");
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error processing campaign ID:", error);
-      throw new Error(`Invalid campaign ID format: ${args.campaignId}`);
-    }
+    const campaignId = args.campaignId;
 
     // Check if user is a member of the campaign with appropriate permissions
     const membership = await ctx.db
@@ -338,7 +281,7 @@ export const getTwitterStatus = query({
 // Check campaign Twitter status
 export const getCampaignTwitterStatus = query({
   args: {
-    campaignId: v.any(),
+    campaignId: v.id("campaigns"),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -347,9 +290,7 @@ export const getCampaignTwitterStatus = query({
     }
 
     const tokenIdentifier = identity.subject;
-
-    // Convert string ID to Convex ID
-    const campaignId = args.campaignId as Id<"campaigns">;
+    const campaignId = args.campaignId;
 
     // Get the campaign
     const campaign = await ctx.db.get(campaignId);
