@@ -63,12 +63,20 @@ export function TwitterApiTester() {
     setIsLoading(true);
     setTestResults(null);
     try {
-      const twitterService = TwitterService.getInstance();
-      const isValid = await twitterService.verifyAuthentication();
+      // Use Convex directly instead of the TwitterService
+      const { api } = await import("../../convex/_generated/api");
+      const verifyResult = await api.twitter.verifyTwitterCredentials.call({
+        accessToken,
+        accessTokenSecret,
+      });
 
-      if (isValid) {
-        // Get user profile to further verify
-        const profile = await twitterService.getUserProfile();
+      if (verifyResult.valid) {
+        // Use the profile data from the verification result
+        const profile = {
+          username: verifyResult.username,
+          name: verifyResult.name,
+          profile_image_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${verifyResult.userId}`,
+        };
 
         setTestResults({
           success: true,
@@ -126,16 +134,21 @@ export function TwitterApiTester() {
     setIsLoading(true);
     setTestResults(null);
     try {
-      const twitterService = TwitterService.getInstance();
-      const result = await twitterService.publishPost({
+      // Use Convex directly instead of the TwitterService
+      const { api } = await import("../../convex/_generated/api");
+      const result = await api.twitter.postTweet.call({
         content: tweetContent,
-        id: `test-${Date.now()}`,
+        userId: "test-user",
+        accessToken,
+        accessTokenSecret,
       });
 
       setTestResults({
-        success: true,
-        message: "Tweet posted successfully!",
-        tweet: result,
+        success: result.success,
+        message: result.success ? "Tweet posted successfully!" : result.error,
+        tweet: result.success
+          ? { text: result.text, id: result.tweetId }
+          : null,
       });
 
       toast({

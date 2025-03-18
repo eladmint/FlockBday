@@ -1,6 +1,7 @@
 import { CampaignPageLayout } from "@/components/campaign-page-layout";
 import { TwitterTestButton } from "@/components/twitter-test-button";
 import { TwitterApiTester } from "@/components/twitter-api-tester";
+import { TwitterConnectButton } from "@/components/twitter-connect-button";
 import {
   Card,
   CardContent,
@@ -15,47 +16,11 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { TwitterService } from "@/services/twitter-service";
 import { useToast } from "@/components/ui/use-toast";
+import { useTwitterIntegration } from "@/hooks/useTwitterIntegration";
 
 export default function TwitterTestPage() {
-  const [apiKey, setApiKey] = useState("");
-  const [apiSecret, setApiSecret] = useState("");
-  const [accessToken, setAccessToken] = useState("");
-  const [accessTokenSecret, setAccessTokenSecret] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const { isConnected, username, profileImageUrl } = useTwitterIntegration();
   const { toast } = useToast();
-
-  const handleSaveCredentials = () => {
-    setIsSaving(true);
-    try {
-      const twitterService = TwitterService.getInstance();
-      twitterService.setCredentials({
-        apiKey,
-        apiSecret,
-        accessToken,
-        accessTokenSecret,
-      });
-
-      toast({
-        title: "Credentials Saved",
-        description:
-          "Twitter API credentials have been saved for this session.",
-      });
-
-      // Clear the form for security
-      setApiKey("");
-      setApiSecret("");
-      setAccessToken("");
-      setAccessTokenSecret("");
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save credentials.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   return (
     <CampaignPageLayout>
@@ -107,7 +72,45 @@ export default function TwitterTestPage() {
           </TabsContent>
 
           <TabsContent value="credentials">
-            <TwitterApiTester />
+            <Card>
+              <CardHeader>
+                <CardTitle>Twitter Connection Status</CardTitle>
+                <CardDescription>
+                  {isConnected
+                    ? `Connected as @${username}`
+                    : "Not connected to Twitter"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {isConnected && (
+                    <div className="flex items-center space-x-4">
+                      {profileImageUrl && (
+                        <img
+                          src={profileImageUrl}
+                          alt="Twitter Profile"
+                          className="w-12 h-12 rounded-full"
+                        />
+                      )}
+                      <div>
+                        <p className="font-medium">@{username}</p>
+                        <p className="text-sm text-gray-500">
+                          Connected to Twitter
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-center">
+                    <TwitterConnectButton />
+                  </div>
+
+                  <div className="mt-4">
+                    <TwitterApiTester />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="info">
