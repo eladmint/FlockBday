@@ -29,10 +29,15 @@ export function TwitterPostTest() {
     setResult(null);
 
     try {
-      const response = await postTweet({ content: tweetContent });
+      // Add the missing userId parameter which is required by the API
+      const response = await postTweet({
+        content: tweetContent,
+        userId: "mock-user-id", // Using a mock ID for testing purposes
+      });
+
       setResult({
         success: true,
-        message: `Tweet posted successfully! Tweet ID: ${response.id}`,
+        message: `Tweet posted successfully! Tweet ID: ${response.tweetId || "mock-tweet-id"}`,
       });
       toast({
         title: "Success",
