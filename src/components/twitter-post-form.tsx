@@ -7,13 +7,29 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Twitter, Image, Link2, Calendar } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useCampaignDetail } from "@/hooks/useCampaignDetail";
+import { useTwitterService } from "@/hooks/useTwitterService";
 import ErrorLogger, {
   logOperation,
   logError,
 } from "@/components/wrappers/ErrorLogger";
+import { Id } from "../../convex/_generated/dataModel";
+
+/**
+ * TwitterPostForm Component
+ *
+ * This component provides a form for creating and scheduling Twitter posts.
+ * It allows users to:
+ * - Create post content with title and body
+ * - Attach an image URL
+ * - Share directly to Twitter (if connected)
+ * - Schedule the post for later publication
+ *
+ * The component integrates with the campaign detail hook to handle post creation
+ * and scheduling through the Convex backend.
+ */
 
 interface TwitterPostFormProps {
-  campaignId: string;
+  campaignId: Id<"campaigns">;
   isTwitterConnected: boolean;
   onPostCreated: (post: any) => void;
 }
@@ -33,6 +49,7 @@ export function TwitterPostForm({
   const [scheduledTime, setScheduledTime] = useState("");
   const { toast } = useToast();
   const { createPost } = useCampaignDetail(campaignId);
+  const twitterService = useTwitterService();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,6 +108,43 @@ export function TwitterPostForm({
           scheduledFor: scheduledTimestamp,
           status: schedulePost ? "scheduled" : "published",
         };
+
+        // If this is a scheduled post with Twitter sharing enabled, use the Twitter scheduler
+        if (
+          schedulePost &&
+          shareOnTwitter &&
+          isTwitterConnected &&
+          scheduledTimestamp
+        ) {
+          try {
+            await twitterService.schedulePost({
+              id: postId,
+              content: postContent,
+              scheduledFor: scheduledTimestamp,
+              imageUrl: imageUrl || undefined,
+              campaignId,
+            });
+          } catch (twitterError) {
+            console.error("Error scheduling Twitter post:", twitterError);
+            // Continue with post creation even if Twitter scheduling fails
+            // The error is already handled in the schedulePost method
+          }
+        }
+        // If immediate publishing to Twitter is requested
+        else if (shareOnTwitter && isTwitterConnected && !schedulePost) {
+          try {
+            await twitterService.publishNow({
+              id: postId,
+              content: postContent,
+              imageUrl: imageUrl || undefined,
+              campaignId,
+            });
+          } catch (twitterError) {
+            console.error("Error publishing to Twitter:", twitterError);
+            // Continue with post creation even if Twitter publishing fails
+            // The error is already handled in the publishNow method
+          }
+        }
 
         onPostCreated(newPost);
 

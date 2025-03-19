@@ -9,6 +9,17 @@ import ErrorLogger, {
   logError,
 } from "@/components/wrappers/ErrorLogger";
 
+/**
+ * TwitterConnect Component
+ *
+ * This component provides the UI for connecting/disconnecting Twitter integration
+ * for a specific campaign. It shows the current connection status and provides
+ * buttons to enable or disable Twitter publishing for the campaign.
+ *
+ * The component uses the Convex backend to manage Twitter integration settings
+ * and displays appropriate feedback to the user.
+ */
+
 interface TwitterConnectProps {
   campaignId: string;
   isConnected: boolean;

@@ -26,12 +26,22 @@ try {
   } else {
     console.log("Twitter credentials not configured, using mock client");
     // Use mock client when credentials are not available
-    twitterClient = new MockTwitterApi();
+    twitterClient = new MockTwitterApi({
+      appKey: "mock-key",
+      appSecret: "mock-secret",
+      accessToken: "mock-token",
+      accessSecret: "mock-token-secret",
+    });
   }
 } catch (error) {
   console.error("Failed to initialize Twitter client:", error);
   // Fallback to mock client on error
-  twitterClient = new MockTwitterApi();
+  twitterClient = new MockTwitterApi({
+    appKey: "mock-key",
+    appSecret: "mock-secret",
+    accessToken: "mock-token",
+    accessSecret: "mock-token-secret",
+  });
 }
 
 export class TwitterService {

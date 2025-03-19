@@ -3,6 +3,14 @@ import { mutation, query, action } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import { internal } from "./internal";
 
+/**
+ * Twitter Integration Module
+ *
+ * This module provides the main interface for Twitter integration in the application.
+ * It includes functions for posting tweets, managing Twitter integration for campaigns,
+ * and scheduling posts for future publication.
+ */
+
 // Connect Twitter account
 export const connectTwitterAccount = mutation({
   args: {
@@ -82,222 +90,280 @@ export const connectTwitterAccount = mutation({
   },
 });
 
-// Disconnect Twitter account
-export const disconnectTwitterAccount = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+// Post a tweet directly
+export const postTweet = mutation({
+  args: {
+    content: v.string(),
+    imageUrl: v.optional(v.string()),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { content, imageUrl, userId } = args;
 
-    const tokenIdentifier = identity.subject;
-
-    // Find the user's Twitter integration
-    const integration = await ctx.db
-      .query("twitterIntegrations")
-      .withIndex("by_user", (q) => q.eq("userId", tokenIdentifier))
-      .first();
-
-    if (!integration) {
-      throw new Error("No Twitter integration found");
-    }
-
-    // Update the integration status
-    await ctx.db.patch(integration._id, {
-      status: "revoked",
-    });
-
-    // Update user record
-    await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
-      .first()
-      .then((user) => {
-        if (user) {
-          ctx.db.patch(user._id, {
-            twitterConnected: false,
-          });
-        }
+    try {
+      // Call the Twitter API action
+      const result = await ctx.runAction(internal.twitter.publishTweet, {
+        content,
+        imageUrl,
+        userId,
       });
 
-    return { success: true };
+      return result;
+    } catch (error) {
+      console.error("Error posting tweet:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  },
+});
+
+// Publish a tweet for a specific post
+export const publishTweet = mutation({
+  args: {
+    postId: v.id("campaignPosts"),
+  },
+  handler: async (ctx, args) => {
+    const { postId } = args;
+
+    try {
+      // Get the post
+      const post = await ctx.db.get(postId);
+      if (!post) {
+        return {
+          success: false,
+          error: "Post not found",
+        };
+      }
+
+      // Call the Twitter API action
+      const result = await ctx.runAction(internal.twitter.publishPostTweet, {
+        postId,
+      });
+
+      if (result.success) {
+        // Update the post with Twitter data
+        await ctx.db.patch(postId, {
+          sharedOnTwitter: true,
+          twitterPostId: result.tweetId,
+          publishedAt: Date.now(),
+          status: "published",
+        });
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error publishing tweet for post:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  },
+});
+
+// Schedule a post for future publication
+export const scheduleTwitterPost = mutation({
+  args: {
+    postId: v.id("campaignPosts"),
+    scheduledFor: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { postId, scheduledFor } = args;
+
+    try {
+      // Get the post
+      const post = await ctx.db.get(postId);
+      if (!post) {
+        return {
+          success: false,
+          error: "Post not found",
+        };
+      }
+
+      // Schedule the post using the scheduler
+      const result = await ctx.runMutation(internal.twitter.schedulePost, {
+        postId,
+        scheduledFor,
+      });
+
+      return result;
+    } catch (error) {
+      console.error("Error scheduling post:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  },
+});
+
+// Cancel a scheduled post
+export const cancelScheduledTwitterPost = mutation({
+  args: {
+    postId: v.id("campaignPosts"),
+  },
+  handler: async (ctx, args) => {
+    const { postId } = args;
+
+    try {
+      // Get the post
+      const post = await ctx.db.get(postId);
+      if (!post) {
+        return {
+          success: false,
+          error: "Post not found",
+        };
+      }
+
+      // Cancel the scheduled post
+      const result = await ctx.runMutation(
+        internal.twitter.cancelScheduledPost,
+        {
+          postId,
+        },
+      );
+
+      return result;
+    } catch (error) {
+      console.error("Error canceling scheduled post:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  },
+});
+
+// Get all scheduled posts for a campaign
+export const getScheduledPosts = query({
+  args: {
+    campaignId: v.optional(v.id("campaigns")),
+  },
+  handler: async (ctx, args) => {
+    const { campaignId } = args;
+
+    // Get the user ID from auth
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+
+    const userId = identity.subject;
+
+    // Get scheduled posts using the internal query
+    return await ctx.runQuery(internal.twitter.getScheduledPosts, {
+      campaignId,
+      userId,
+    });
+  },
+});
+
+// Get Twitter status for a campaign
+export const getCampaignTwitterStatus = query({
+  args: {
+    campaignId: v.id("campaigns"),
+  },
+  handler: async (ctx, args) => {
+    const { campaignId } = args;
+
+    // Get the campaign
+    const campaign = await ctx.db.get(args.campaignId);
+    if (!campaign) {
+      return {
+        isConnected: false,
+        error: "Campaign not found",
+      };
+    }
+
+    // Check if Twitter is enabled for this campaign
+    return {
+      isConnected: Boolean(campaign.twitterEnabled),
+      username: campaign.twitterUsername,
+    };
   },
 });
 
 // Enable Twitter for a campaign
 export const enableTwitterForCampaign = mutation({
   args: {
-    campaignId: v.string(),
+    campaignId: v.id("campaigns"),
   },
   handler: async (ctx, args) => {
+    const { campaignId } = args;
+
+    // Get the campaign
+    const campaign = await ctx.db.get(campaignId);
+    if (!campaign) {
+      return {
+        success: false,
+        error: "Campaign not found",
+      };
+    }
+
+    // Get the user's Twitter integration
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
-      throw new Error("Not authenticated");
+      return {
+        success: false,
+        error: "Not authenticated",
+      };
     }
 
-    const tokenIdentifier = identity.subject;
+    const userId = identity.subject;
 
-    // Safely convert string ID to Convex ID
-    let campaignId;
-    try {
-      // First try to get the campaign directly
-      const campaign = await ctx.db.get(args.campaignId as Id<"campaigns">);
-      if (campaign) {
-        campaignId = args.campaignId as Id<"campaigns">;
-      } else {
-        // If that fails, try to find the campaign by string ID
-        console.log("Looking up campaign by string ID:", args.campaignId);
-        const campaigns = await ctx.db.query("campaigns").collect();
-        const campaign = campaigns.find(
-          (c) => c._id.toString() === args.campaignId,
-        );
-        if (campaign) {
-          campaignId = campaign._id;
-        } else {
-          throw new Error("Campaign not found");
-        }
-      }
-    } catch (error) {
-      console.error("Error processing campaign ID:", error);
-      throw new Error(`Invalid campaign ID format: ${args.campaignId}`);
-    }
-
-    // Check if user is a member of the campaign with appropriate permissions
-    const membership = await ctx.db
-      .query("campaignMembers")
-      .withIndex("by_campaign_and_user", (q) =>
-        q.eq("campaignId", campaignId).eq("userId", tokenIdentifier),
-      )
-      .first();
-
-    if (
-      !membership ||
-      (membership.role !== "owner" && membership.role !== "admin")
-    ) {
-      throw new Error("Not authorized to enable Twitter for this campaign");
-    }
-
-    // Check if user has Twitter connected
-    const integration = await ctx.db
+    // Check if the user has Twitter connected
+    const twitterIntegrations = await ctx.db
       .query("twitterIntegrations")
-      .withIndex("by_user", (q) => q.eq("userId", tokenIdentifier))
+      .filter((q) => q.eq(q.field("userId"), userId))
       .first();
 
-    if (!integration || integration.status !== "active") {
-      throw new Error("Twitter account not connected");
+    if (!twitterIntegrations) {
+      return {
+        success: false,
+        error: "Twitter not connected for this user",
+      };
     }
 
     // Enable Twitter for the campaign
     await ctx.db.patch(campaignId, {
       twitterEnabled: true,
-      updatedAt: Date.now(),
+      twitterUsername: twitterIntegrations.username,
     });
 
-    // Create campaign-specific Twitter integration if it doesn't exist
-    const campaignIntegration = await ctx.db
-      .query("twitterIntegrations")
-      .withIndex("by_user_and_campaign", (q) =>
-        q.eq("userId", tokenIdentifier).eq("campaignId", campaignId),
-      )
-      .first();
-
-    if (!campaignIntegration) {
-      await ctx.db.insert("twitterIntegrations", {
-        userId: tokenIdentifier,
-        campaignId: campaignId,
-        accessToken: integration.accessToken,
-        accessTokenSecret: integration.accessTokenSecret,
-        username: integration.username,
-        profileImageUrl: integration.profileImageUrl,
-        connectedAt: Date.now(),
-        status: "active",
-      });
-    } else if (campaignIntegration.status !== "active") {
-      await ctx.db.patch(campaignIntegration._id, {
-        status: "active",
-        lastUsedAt: Date.now(),
-      });
-    }
-
-    return { success: true };
+    return {
+      success: true,
+    };
   },
 });
 
 // Disable Twitter for a campaign
 export const disableTwitterForCampaign = mutation({
   args: {
-    campaignId: v.string(),
+    campaignId: v.id("campaigns"),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const { campaignId } = args;
 
-    const tokenIdentifier = identity.subject;
-
-    // Safely convert string ID to Convex ID
-    let campaignId;
-    try {
-      // First try to get the campaign directly
-      const campaign = await ctx.db.get(args.campaignId as Id<"campaigns">);
-      if (campaign) {
-        campaignId = args.campaignId as Id<"campaigns">;
-      } else {
-        // If that fails, try to find the campaign by string ID
-        console.log("Looking up campaign by string ID:", args.campaignId);
-        const campaigns = await ctx.db.query("campaigns").collect();
-        const campaign = campaigns.find(
-          (c) => c._id.toString() === args.campaignId,
-        );
-        if (campaign) {
-          campaignId = campaign._id;
-        } else {
-          throw new Error("Campaign not found");
-        }
-      }
-    } catch (error) {
-      console.error("Error processing campaign ID:", error);
-      throw new Error(`Invalid campaign ID format: ${args.campaignId}`);
-    }
-
-    // Check if user is a member of the campaign with appropriate permissions
-    const membership = await ctx.db
-      .query("campaignMembers")
-      .withIndex("by_campaign_and_user", (q) =>
-        q.eq("campaignId", campaignId).eq("userId", tokenIdentifier),
-      )
-      .first();
-
-    if (
-      !membership ||
-      (membership.role !== "owner" && membership.role !== "admin")
-    ) {
-      throw new Error("Not authorized to disable Twitter for this campaign");
+    // Get the campaign
+    const campaign = await ctx.db.get(campaignId);
+    if (!campaign) {
+      return {
+        success: false,
+        error: "Campaign not found",
+      };
     }
 
     // Disable Twitter for the campaign
     await ctx.db.patch(campaignId, {
       twitterEnabled: false,
-      updatedAt: Date.now(),
+      twitterUsername: null,
     });
 
-    // Update campaign-specific Twitter integration if it exists
-    const campaignIntegration = await ctx.db
-      .query("twitterIntegrations")
-      .withIndex("by_user_and_campaign", (q) =>
-        q.eq("userId", tokenIdentifier).eq("campaignId", campaignId),
-      )
-      .first();
-
-    if (campaignIntegration) {
-      await ctx.db.patch(campaignIntegration._id, {
-        status: "revoked",
-      });
-    }
-
-    return { success: true };
+    return {
+      success: true,
+    };
   },
 });
 
@@ -326,144 +392,7 @@ export const getTwitterStatus = query({
   },
 });
 
-// Check campaign Twitter status
-export const getCampaignTwitterStatus = query({
-  args: {
-    campaignId: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return { enabled: false };
-    }
-
-    const tokenIdentifier = identity.subject;
-
-    // Safely convert string ID to Convex ID
-    let campaignId;
-    try {
-      // First try to get the campaign directly
-      const campaign = await ctx.db.get(args.campaignId as Id<"campaigns">);
-      if (campaign) {
-        campaignId = args.campaignId as Id<"campaigns">;
-      } else {
-        // If that fails, try to find the campaign by string ID
-        console.log("Looking up campaign by string ID:", args.campaignId);
-        const campaigns = await ctx.db.query("campaigns").collect();
-        const campaign = campaigns.find(
-          (c) => c._id.toString() === args.campaignId,
-        );
-        if (campaign) {
-          campaignId = campaign._id;
-        } else {
-          throw new Error("Campaign not found");
-        }
-      }
-    } catch (error) {
-      console.error("Error processing campaign ID:", error);
-      throw new Error(`Invalid campaign ID format: ${args.campaignId}`);
-    }
-
-    // Get the campaign
-    const campaign = await ctx.db.get(campaignId);
-    if (!campaign) {
-      throw new Error("Campaign not found");
-    }
-
-    // Check if user is a member of the campaign
-    const membership = await ctx.db
-      .query("campaignMembers")
-      .withIndex("by_campaign_and_user", (q) =>
-        q.eq("campaignId", campaignId).eq("userId", tokenIdentifier),
-      )
-      .first();
-
-    if (!membership && campaign.visibility !== "public") {
-      throw new Error("Not authorized to view this campaign");
-    }
-
-    return {
-      enabled: !!campaign.twitterEnabled,
-    };
-  },
-});
-
-// Publish a tweet (action to handle external API call)
-export const publishTweet = action({
-  args: {
-    postId: v.id("campaignPosts"),
-  },
-  handler: async (ctx, args) => {
-    // Get the post
-    const post = await ctx.runQuery(internal.posts.getPostInternal, {
-      postId: args.postId,
-    });
-
-    if (!post) {
-      throw new Error("Post not found");
-    }
-
-    // Get the campaign
-    const campaign = await ctx.runQuery(
-      internal.campaigns.getCampaignInternal,
-      {
-        campaignId: post.campaignId,
-      },
-    );
-
-    if (!campaign || !campaign.twitterEnabled) {
-      throw new Error("Twitter is not enabled for this campaign");
-    }
-
-    // Get the Twitter integration for this campaign
-    const integration = await ctx.runQuery(
-      internal.twitter.getTwitterIntegrationInternal,
-      {
-        userId: post.createdBy,
-        campaignId: post.campaignId,
-      },
-    );
-
-    if (!integration || integration.status !== "active") {
-      throw new Error("Twitter integration not found or inactive");
-    }
-
-    try {
-      // In a real implementation, this would call the Twitter API
-      // For now, we'll simulate a successful tweet
-      const tweetId = `twitter-${Date.now()}`;
-
-      // Update the post with the tweet ID and stats
-      await ctx.runMutation(internal.posts.updatePostInternal, {
-        postId: args.postId,
-        status: "published",
-        publishedAt: Date.now(),
-        sharedOnTwitter: true,
-        twitterPostId: tweetId,
-        twitterStats: {
-          likes: 0,
-          retweets: 0,
-          replies: 0,
-        },
-      });
-
-      return {
-        success: true,
-        tweetId,
-      };
-    } catch (error) {
-      // Update the post with the error
-      await ctx.runMutation(internal.posts.updatePostInternal, {
-        postId: args.postId,
-        status: "failed",
-      });
-
-      throw error;
-    }
-  },
-});
-
-// Internal functions
+// Get Twitter integration for internal use
 export const getTwitterIntegrationInternal = query({
   args: {
     userId: v.string(),

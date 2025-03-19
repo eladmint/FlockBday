@@ -4,8 +4,14 @@ import { action } from "./_generated/server";
 import { TwitterApi } from "twitter-api-v2";
 import { internal } from "./internal";
 
-// This file contains server-side actions that interact with the Twitter API
-// These actions run in a Node.js environment and can use the Twitter API directly
+/**
+ * Twitter API Module
+ *
+ * This module provides server-side actions for interacting with the Twitter API.
+ * It handles the actual API calls to Twitter's servers using the twitter-api-v2 library.
+ *
+ * These actions are called from the Convex mutations and queries to perform Twitter operations.
+ */
 
 // Helper function to create a Twitter client
 function createTwitterClient(accessToken?: string, accessTokenSecret?: string) {
@@ -72,7 +78,7 @@ export const verifyTwitterCredentials = action({
 });
 
 // Action to post a tweet
-export const postTweet = action({
+export const publishTweet = action({
   args: {
     userId: v.string(),
     accessToken: v.optional(v.string()),

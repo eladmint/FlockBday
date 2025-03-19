@@ -11,6 +11,7 @@ import { CampaignStats } from "@/components/campaign-stats";
 import { CampaignTabs } from "@/components/campaign-tabs";
 import { CampaignPostsSection } from "@/components/campaign-posts-section";
 import { TwitterTestButton } from "@/components/twitter-test-button";
+import { TwitterMetricsChart } from "@/components/twitter-metrics-chart";
 import { convexIdToString } from "@/utils/convexHelpers";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -137,6 +138,7 @@ export function CampaignDetail() {
               onCancelScheduled={cancelScheduledPost}
             />
           }
+          metricsTab={<TwitterMetricsChart posts={posts} />}
         />
       </div>
     </CampaignPageLayout>
