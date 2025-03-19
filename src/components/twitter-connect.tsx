@@ -8,6 +8,7 @@ import ErrorLogger, {
   logOperation,
   logError,
 } from "@/components/wrappers/ErrorLogger";
+import { TwitterConnectButton } from "./twitter-connect-button";
 
 /**
  * TwitterConnect Component
@@ -130,14 +131,13 @@ export function TwitterConnect({
                     </Button>
                   </>
                 ) : (
-                  <Button
-                    variant="outline"
-                    className="border-blue-500 text-blue-600 hover:bg-blue-50"
-                    onClick={handleConnect}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Enabling..." : "Enable for Campaign"}
-                  </Button>
+                  <TwitterConnectButton
+                    campaignId={campaignId}
+                    isConnected={isConnected}
+                    onConnect={handleConnect}
+                    onDisconnect={handleDisconnect}
+                    className=""
+                  />
                 )}
               </div>
             </>

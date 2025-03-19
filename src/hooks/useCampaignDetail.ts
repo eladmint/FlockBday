@@ -16,16 +16,6 @@ export function useCampaignDetail(campaignId: string) {
     (c) => c._id === (campaignId as Id<"campaigns">),
   );
 
-  // Log campaign details for debugging
-  useEffect(() => {
-    if (campaign) {
-      console.log("Found campaign:", campaign);
-      console.log("Campaign ID:", campaign._id);
-      console.log("Campaign ID type:", typeof campaign._id);
-      console.log("Campaign ID as string:", convexIdToString(campaign._id));
-    }
-  }, [campaign]);
-
   // Get campaign posts
   const posts =
     useQuery(
@@ -45,13 +35,6 @@ export function useCampaignDetail(campaignId: string) {
     api.twitter.getCampaignTwitterStatus,
     campaign ? { campaignId: convexIdToString(campaign._id) } : "skip",
   );
-
-  // Log Twitter status for debugging
-  useEffect(() => {
-    if (twitterStatus) {
-      console.log("Twitter status for campaign:", twitterStatus);
-    }
-  }, [twitterStatus]);
 
   // Mutations
   const enableTwitterMutation = useMutation(
@@ -95,10 +78,6 @@ export function useCampaignDetail(campaignId: string) {
       }
 
       console.log("Enabling Twitter for campaign:", campaign._id);
-      console.log("Campaign ID type:", typeof campaign._id);
-
-      // Use the campaign ID directly - Convex will handle the conversion
-      console.log("Using campaign ID:", campaign._id);
 
       // Call the Convex mutation with the string ID
       const campaignIdStr = convexIdToString(campaign._id);
@@ -169,10 +148,6 @@ export function useCampaignDetail(campaignId: string) {
       }
 
       console.log("Disabling Twitter for campaign:", campaign._id);
-      console.log("Campaign ID type:", typeof campaign._id);
-
-      // Use the campaign ID directly - Convex will handle the conversion
-      console.log("Using campaign ID:", campaign._id);
 
       // Call the Convex mutation with the string ID
       const campaignIdStr = convexIdToString(campaign._id);
@@ -249,7 +224,6 @@ export function useCampaignDetail(campaignId: string) {
       }
 
       console.log("Creating post for campaign:", campaign._id);
-      console.log("Campaign ID type:", typeof campaign._id);
 
       // Convert the ID to a string format that Convex can handle
       const campaignIdStr = convexIdToString(campaign._id);
@@ -398,7 +372,7 @@ export function useCampaignDetail(campaignId: string) {
     campaign,
     posts,
     scheduledPosts,
-    twitterEnabled: twitterStatus?.enabled ?? false,
+    twitterEnabled: twitterStatus?.isConnected ?? false,
     isLoading,
     enableTwitter,
     disableTwitter,
