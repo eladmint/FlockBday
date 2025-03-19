@@ -7,6 +7,7 @@ import { api } from "../../convex/_generated/api";
 export function useTwitterCredentials() {
   // Query Twitter status from Convex
   const twitterStatus = useQuery(api.twitter.getTwitterStatus);
+  const serverConfig = useQuery(api.twitterStatus.isConfigured);
 
   // Add fallback for development/testing
   const fallbackStatus = {
@@ -29,11 +30,15 @@ export function useTwitterCredentials() {
   // Use actual data or fallback
   const status = twitterStatus || fallbackStatus;
 
+  // Check server configuration
+  const isServerConfigured = serverConfig?.configured || false;
+
   return {
-    isConfigured: status.connected || false,
+    isConfigured: status.connected || isServerConfigured,
     isLoading: false,
     error: status.error,
     username: status.username,
     profileImageUrl: status.profileImageUrl,
+    serverConfig: serverConfig,
   };
 }

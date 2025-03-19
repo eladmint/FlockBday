@@ -38,3 +38,44 @@ export const getTwitterStatus = query({
     }
   },
 });
+
+/**
+ * Query to check if Twitter API is configured on the server
+ */
+export const isConfigured = query({
+  args: {},
+  handler: async (ctx) => {
+    try {
+      // Check if Twitter API credentials are configured
+      const TWITTER_API_KEY = process.env.VITE_TWITTER_API_KEY;
+      const TWITTER_API_SECRET = process.env.VITE_TWITTER_API_SECRET;
+      const TWITTER_ACCESS_TOKEN = process.env.VITE_TWITTER_ACCESS_TOKEN;
+      const TWITTER_ACCESS_TOKEN_SECRET =
+        process.env.VITE_TWITTER_ACCESS_TOKEN_SECRET;
+
+      const configured = !!(
+        TWITTER_API_KEY &&
+        TWITTER_API_SECRET &&
+        TWITTER_ACCESS_TOKEN &&
+        TWITTER_ACCESS_TOKEN_SECRET
+      );
+
+      return {
+        configured,
+        environment: process.env.NODE_ENV || "unknown",
+        credentials: {
+          apiKeyExists: !!TWITTER_API_KEY,
+          apiSecretExists: !!TWITTER_API_SECRET,
+          accessTokenExists: !!TWITTER_ACCESS_TOKEN,
+          accessTokenSecretExists: !!TWITTER_ACCESS_TOKEN_SECRET,
+        },
+      };
+    } catch (error) {
+      console.error("Error checking Twitter configuration:", error);
+      return {
+        configured: false,
+        error: String(error),
+      };
+    }
+  },
+});
