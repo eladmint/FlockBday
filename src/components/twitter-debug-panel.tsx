@@ -7,19 +7,28 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useTwitterCredentials } from "@/hooks/useTwitterCredentials";
-import { Twitter, Bug, RefreshCw, Server, Laptop } from "lucide-react";
+import {
+  Twitter,
+  Bug,
+  RefreshCw,
+  Server,
+  Laptop,
+  AlertTriangle,
+  CheckCircle2,
+} from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { api } from "../../convex/_generated/api";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 
 /**
  * A debug panel for Twitter integration
  * This component is useful during development and testing
+ * It relies on server-side status checks rather than client-side environment variables
  */
 export function TwitterDebugPanel() {
-  const { isConfigured, isLoading, username, serverConfig } =
+  const { isConfigured, isConnected, isLoading, username, serverConfig } =
     useTwitterCredentials();
   const [isChecking, setIsChecking] = useState(false);
   const { toast } = useToast();
@@ -32,15 +41,15 @@ export function TwitterDebugPanel() {
     try {
       // Check Twitter status using Convex
       const status = await api.twitter.getTwitterStatus.query();
+      const serverStatus = await api.twitterStatus.isConfigured.query();
 
       toast({
-        title: "Twitter Status",
-        description: status.connected
-          ? `Connected as @${status.username}`
-          : "Not connected",
+        title: "Twitter Status Updated",
+        description: `Server config: ${serverStatus.configured ? "✅" : "❌"}, Account connected: ${status.connected ? "✅" : "❌"}${status.username ? ` as @${status.username}` : ""}`,
       });
 
       console.log("Twitter status:", status);
+      console.log("Server configuration:", serverStatus);
     } catch (error) {
       console.error("Error checking Twitter status:", error);
       toast({
@@ -66,6 +75,44 @@ export function TwitterDebugPanel() {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
+          {/* Status summary */}
+          <div className="p-4 rounded-md border border-blue-200 bg-blue-50">
+            <h3 className="text-md font-medium flex items-center mb-3">
+              <CheckCircle2 className="h-4 w-4 mr-2 text-blue-600" /> Status
+              Summary
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <Server className="h-4 w-4 text-slate-600" />
+                <span>Server Configuration:</span>
+                <Badge
+                  variant={isConfigured ? "outline" : "outline"}
+                  className={
+                    isConfigured
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }
+                >
+                  {isConfigured ? "Configured" : "Not Configured"}
+                </Badge>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Twitter className="h-4 w-4 text-blue-500" />
+                <span>Account Connection:</span>
+                <Badge
+                  variant={isConnected ? "outline" : "outline"}
+                  className={
+                    isConnected
+                      ? "bg-green-100 text-green-800"
+                      : "bg-amber-100 text-amber-800"
+                  }
+                >
+                  {isConnected ? "Connected" : "Not Connected"}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
           {/* Server-side configuration */}
           <div>
             <h3 className="text-md font-medium flex items-center mb-2">
@@ -140,12 +187,21 @@ export function TwitterDebugPanel() {
                 <div className="mt-2">
                   <Badge
                     variant={serverConfig.configured ? "outline" : "outline"}
-                    className="bg-green-100 text-green-800"
+                    className={
+                      serverConfig.configured
+                        ? "bg-green-100 text-green-800"
+                        : "bg-amber-100 text-amber-800"
+                    }
                   >
                     {serverConfig.configured
                       ? "Twitter API Configured on Server"
                       : "Using Mock Implementation"}
                   </Badge>
+                  {serverConfig.environment && (
+                    <Badge variant="outline" className="ml-2">
+                      Environment: {serverConfig.environment}
+                    </Badge>
+                  )}
                 </div>
               </div>
             ) : (
@@ -182,25 +238,30 @@ export function TwitterDebugPanel() {
             </div>
           </div>
 
-          <div className="mt-4 text-sm text-gray-500 p-3 bg-gray-50 rounded-md border">
-            <p className="font-medium mb-1">Important Notes:</p>
+          <div className="mt-4 text-sm text-gray-500 p-3 bg-blue-50 rounded-md border border-blue-200">
+            <p className="font-medium mb-1 flex items-center">
+              <AlertTriangle className="h-4 w-4 mr-1 text-blue-600" />
+              Important Notes:
+            </p>
             <ul className="list-disc pl-5 space-y-1">
               <li>
                 Environment variables in Convex are only accessible on the
                 server side, not in client code.
               </li>
               <li>
-                The application will use the server-side configuration for
-                actual Twitter API calls.
+                <strong>
+                  The client now relies on server-side status checks
+                </strong>{" "}
+                to determine if Twitter is configured.
               </li>
               <li>
                 If server-side credentials are missing, the application will
                 fall back to using mock data.
               </li>
               <li>
-                The "false" values you're seeing in client-side checks are
-                expected - client code cannot access server environment
-                variables.
+                The "false" values you might see in client-side environment
+                checks are expected - client code cannot access server
+                environment variables.
               </li>
             </ul>
           </div>
