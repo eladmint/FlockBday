@@ -1,6 +1,6 @@
 import { CampaignPageLayout } from "@/components/campaign-page-layout";
 import { TwitterTestButton } from "@/components/twitter-test-button";
-
+import { TwitterPostTest } from "@/components/twitter-post-test";
 import { TwitterConnectButton } from "@/components/twitter-connect-button";
 import {
   Card,
@@ -39,6 +39,8 @@ export default function TwitterTestPage() {
         <Tabs defaultValue="test">
           <TabsList className="mb-4">
             <TabsTrigger value="test">Run Tests</TabsTrigger>
+            <TabsTrigger value="post">Test Posting</TabsTrigger>
+            <TabsTrigger value="info">Info</TabsTrigger>
           </TabsList>
 
           <TabsContent value="test">
@@ -96,6 +98,34 @@ export default function TwitterTestPage() {
                       detailed test results.
                     </p>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="post">
+            <Card>
+              <CardHeader>
+                <CardTitle>Test Tweet Posting</CardTitle>
+                <CardDescription>
+                  Test if the Twitter posting engine works by sending a real
+                  tweet to your connected account.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {isConnected ? (
+                    <TwitterPostTest />
+                  ) : (
+                    <div className="bg-yellow-50 p-4 rounded-md">
+                      <p className="text-sm text-yellow-800">
+                        You need to connect to Twitter before testing the
+                        posting functionality. Please check your Convex
+                        configuration and ensure you have the proper credentials
+                        set up.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
