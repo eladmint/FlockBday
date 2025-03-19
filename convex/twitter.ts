@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query, action } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import { internal } from "./internal";
+import { ConvexError } from "convex/values";
 
 /**
  * Twitter Integration Module
@@ -332,74 +333,139 @@ export const getCampaignTwitterStatus = query({
 // Enable Twitter for a campaign
 export const enableTwitterForCampaign = mutation({
   args: {
-    campaignId: v.id("campaigns"),
+    campaignId: v.string(),
   },
   handler: async (ctx, args) => {
-    const { campaignId } = args;
+    try {
+      console.log("enableTwitterForCampaign called with:", args);
+      const { campaignId } = args;
 
-    // Get the campaign
-    const campaign = await ctx.db.get(campaignId);
-    if (!campaign) {
-      return {
-        success: false,
-        error: "Campaign not found",
-      };
-    }
-
-    // Get the user's Twitter integration
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return {
-        success: false,
-        error: "Not authenticated",
-      };
-    }
-
-    const userId = identity.subject;
-
-    // Check if the user has Twitter connected
-    const twitterIntegration = await ctx.db
-      .query("twitterIntegrations")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
-
-    // For demo purposes, create a mock Twitter integration if none exists
-    if (!twitterIntegration) {
-      // Create a mock Twitter integration for demo purposes
-      await ctx.db.insert("twitterIntegrations", {
-        userId: userId,
-        accessToken: "mock-access-token",
-        accessTokenSecret: "mock-access-token-secret",
-        username: "twitter_user",
-        profileImageUrl:
-          "https://api.dicebear.com/7.x/avataaars/svg?seed=twitter",
-        connectedAt: Date.now(),
-        status: "active",
-      });
-
-      // Update user record if it exists
-      const user = await ctx.db
-        .query("users")
-        .withIndex("by_token", (q) => q.eq("tokenIdentifier", userId))
-        .first();
-
-      if (user) {
-        await ctx.db.patch(user._id, {
-          twitterConnected: true,
-          twitterUsername: "twitter_user",
-        });
+      // Convert string ID to Convex ID
+      let campaignIdObj;
+      try {
+        campaignIdObj = Id.fromString(campaignId);
+        console.log("Converted campaignId to:", campaignIdObj);
+      } catch (error) {
+        console.error("Invalid campaign ID format:", error);
+        return {
+          success: false,
+          error: "Invalid campaign ID format",
+        };
       }
+
+      // Get the campaign
+      const campaign = await ctx.db.get(campaignIdObj);
+      console.log("Found campaign:", campaign ? "yes" : "no");
+      if (!campaign) {
+        return {
+          success: false,
+          error: "Campaign not found",
+        };
+      }
+
+      // Get the user's Twitter integration
+      const identity = await ctx.auth.getUserIdentity();
+      console.log("User authenticated:", identity ? "yes" : "no");
+      if (!identity) {
+        return {
+          success: false,
+          error: "Not authenticated",
+        };
+      }
+
+      const userId = identity.subject;
+      console.log("User ID:", userId);
+
+      // Check if the user has Twitter connected
+      let twitterIntegration;
+      try {
+        twitterIntegration = await ctx.db
+          .query("twitterIntegrations")
+          .withIndex("by_user", (q) => q.eq("userId", userId))
+          .first();
+        console.log(
+          "Found Twitter integration:",
+          twitterIntegration ? "yes" : "no",
+        );
+      } catch (error) {
+        console.error("Error querying Twitter integrations:", error);
+        return {
+          success: false,
+          error: "Error querying Twitter integrations",
+        };
+      }
+
+      // For demo purposes, create a mock Twitter integration if none exists
+      if (!twitterIntegration) {
+        console.log("Creating mock Twitter integration");
+        try {
+          // Create a mock Twitter integration for demo purposes
+          const integrationId = await ctx.db.insert("twitterIntegrations", {
+            userId: userId,
+            accessToken: "mock-access-token",
+            accessTokenSecret: "mock-access-token-secret",
+            username: "twitter_user",
+            profileImageUrl:
+              "https://api.dicebear.com/7.x/avataaars/svg?seed=twitter",
+            connectedAt: Date.now(),
+            status: "active",
+          });
+          console.log(
+            "Created mock Twitter integration with ID:",
+            integrationId,
+          );
+
+          // Update user record if it exists
+          const user = await ctx.db
+            .query("users")
+            .withIndex("by_token", (q) => q.eq("tokenIdentifier", userId))
+            .first();
+
+          if (user) {
+            await ctx.db.patch(user._id, {
+              twitterConnected: true,
+              twitterUsername: "twitter_user",
+            });
+            console.log("Updated user record");
+          }
+
+          // Fetch the newly created integration
+          twitterIntegration = await ctx.db.get(integrationId);
+        } catch (error) {
+          console.error("Error creating mock Twitter integration:", error);
+          return {
+            success: false,
+            error: "Error creating mock Twitter integration",
+          };
+        }
+      }
+
+      // Enable Twitter for the campaign
+      try {
+        console.log("Enabling Twitter for campaign:", campaignIdObj);
+        await ctx.db.patch(campaignIdObj, {
+          twitterEnabled: true,
+          twitterUsername: twitterIntegration?.username || "twitter_user",
+        });
+        console.log("Successfully enabled Twitter for campaign");
+      } catch (error) {
+        console.error("Error patching campaign:", error);
+        return {
+          success: false,
+          error: "Error enabling Twitter for campaign",
+        };
+      }
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      console.error("Unexpected error in enableTwitterForCampaign:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
     }
-
-    // Enable Twitter for the campaign
-    await ctx.db.patch(campaignId, {
-      twitterEnabled: true,
-      twitterUsername: twitterIntegration?.username || "twitter_user",
-    });
-
-    return {
-      success: true,
-    };
   },
 });
 

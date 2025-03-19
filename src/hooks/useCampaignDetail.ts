@@ -83,11 +83,20 @@ export function useCampaignDetail(campaignId: string) {
       const campaignIdStr = convexIdToString(campaign._id);
       console.log("Enabling Twitter with campaign ID (string):", campaignIdStr);
 
+      // Add additional debugging
+      console.log("Campaign ID type:", typeof campaignIdStr);
+      console.log("Campaign ID value:", campaignIdStr);
+      console.log("Campaign object:", JSON.stringify(campaign, null, 2));
+
       const result = await enableTwitterMutation({
         campaignId: campaignIdStr,
       });
 
       console.log("Twitter enable result:", result);
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to enable Twitter");
+      }
 
       toast({
         title: "Success",

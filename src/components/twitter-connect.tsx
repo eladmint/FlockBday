@@ -49,6 +49,10 @@ export function TwitterConnect({
     setIsLoading(true);
     try {
       logOperation("enableTwitter", { campaignId });
+      console.log(
+        "TwitterConnect: handleConnect called with campaignId:",
+        campaignId,
+      );
       // Call the onConnect function which now uses the Convex API
       await onConnect();
       toast({
@@ -56,10 +60,14 @@ export function TwitterConnect({
         description: "Twitter publishing enabled for this campaign",
       });
     } catch (error) {
+      console.error("TwitterConnect: Error in handleConnect:", error);
       logError("enableTwitter", error, { campaignId });
       toast({
         title: "Error",
-        description: "Failed to enable Twitter for this campaign",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to enable Twitter for this campaign",
         variant: "destructive",
       });
     } finally {
