@@ -91,7 +91,6 @@ export async function createTwitterClient(credentials?: {
 
   try {
     // Check if credentials are configured on the server using ConvexClient
-    // This approach works outside of React components
     const { api } = await import("../../convex/_generated/api");
     const { ConvexClient } = await import("convex/browser");
 

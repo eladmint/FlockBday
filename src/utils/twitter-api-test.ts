@@ -1,4 +1,3 @@
-import { TwitterService } from "@/services/twitter-service";
 import { useToast } from "@/components/ui/use-toast";
 
 /**
@@ -83,18 +82,6 @@ export async function testTwitterIntegration() {
 
     console.log(`User profile retrieved: ${userProfile ? "✅ Yes" : "❌ No"}`);
     console.log("Profile:", userProfile);
-
-    // Test 4: Post a test tweet (optional - commented out for safety)
-    /*
-    console.log("Test 4: Posting a test tweet...");
-    const testTweet = {
-      content: "This is a test tweet from our application. Please ignore. #testing " + new Date().toISOString(),
-      userId: "mock-user-id" // In a real app, this would be the authenticated user's ID
-    };
-    const postResult = await client.mutation(api.twitter.postTweet, testTweet);
-    console.log(`Test tweet posted: ${postResult.success ? "✅ Yes" : "❌ No"}`);
-    console.log("Post result:", postResult);
-    */
 
     console.log("🎉 Twitter API integration test completed successfully!");
     return true;
