@@ -55,7 +55,7 @@ export class TwitterApiBrowser {
 }
 
 // Factory function that mimics the original but returns our browser-compatible version
-export function createTwitterClient(credentials?: {
+export async function createTwitterClient(credentials?: {
   apiKey: string;
   apiSecret: string;
   accessToken: string;
@@ -101,33 +101,42 @@ export function createTwitterClient(credentials?: {
     });
   }
 
-  // We'll use empty values and rely on the server-side implementation
-  // The actual API calls will be handled by Convex
-  const apiKey = "";
-  const apiSecret = "";
-  const accessToken = "";
-  const accessTokenSecret = "";
+  try {
+    // Check if credentials are configured on the server
+    const { api } = await import("../../convex/_generated/api");
+    const serverConfig = await api.twitterStatus.isConfigured.query();
 
-  // Check if credentials exist
-  if (!apiKey || !apiSecret || !accessToken || !accessTokenSecret) {
-    console.warn(
-      "Twitter API credentials not found in environment variables, using empty values",
-    );
-    // Return with empty values instead of throwing - this allows the app to load
-    // even without credentials, and the actual API calls will be handled by Convex
-    return new TwitterApiBrowser({
-      appKey: apiKey || "",
-      appSecret: apiSecret || "",
-      accessToken: accessToken || "",
-      accessSecret: accessTokenSecret || "",
+    // If server has credentials configured, use placeholder values that indicate
+    // we should use the server-side implementation
+    if (serverConfig.configured) {
+      console.log("Using server-configured Twitter credentials");
+      return new TwitterApiBrowser({
+        appKey: "server-configured",
+        appSecret: "server-configured",
+        accessToken: "server-configured",
+        accessSecret: "server-configured",
+      });
+    } else {
+      console.warn(
+        "Twitter API credentials not configured on server, using mock implementation",
+      );
+      const { MockTwitterApi } = require("./mock-twitter-service");
+      return new MockTwitterApi({
+        appKey: "mock-key",
+        appSecret: "mock-secret",
+        accessToken: "mock-token",
+        accessSecret: "mock-token-secret",
+      });
+    }
+  } catch (error) {
+    console.error("Error checking server credentials:", error);
+    console.warn("Falling back to mock implementation");
+    const { MockTwitterApi } = require("./mock-twitter-service");
+    return new MockTwitterApi({
+      appKey: "mock-key",
+      appSecret: "mock-secret",
+      accessToken: "mock-token",
+      accessSecret: "mock-token-secret",
     });
   }
-
-  // Create and return the Twitter client
-  return new TwitterApiBrowser({
-    appKey: apiKey,
-    appSecret: apiSecret,
-    accessToken: accessToken,
-    accessSecret: accessTokenSecret,
-  });
 }

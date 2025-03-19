@@ -46,20 +46,23 @@ export class TwitterService {
   }
 
   public async checkCredentials(): Promise<boolean> {
-    return !!(
-      TWITTER_API_KEY &&
-      TWITTER_API_SECRET &&
-      TWITTER_ACCESS_TOKEN &&
-      TWITTER_ACCESS_TOKEN_SECRET
-    );
+    try {
+      // Use the Convex API to check if credentials are configured on the server
+      const { api } = await import("../../convex/_generated/api");
+      const serverConfig = await api.twitterStatus.isConfigured.query();
+      return serverConfig.configured;
+    } catch (error) {
+      console.error("Error checking Twitter credentials:", error);
+      return false;
+    }
   }
 
   public async verifyAuthentication(): Promise<boolean> {
     try {
-      // Check if credentials exist
+      // Check if credentials exist using server-side check
       const hasCredentials = await this.checkCredentials();
       if (!hasCredentials) {
-        console.error("Twitter credentials not configured");
+        console.error("Twitter credentials not configured on server");
         return false;
       }
 
