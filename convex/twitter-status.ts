@@ -11,7 +11,7 @@ export const getTwitterStatus = query({
     try {
       // This is a client-side query, so we can't directly access environment variables
       // Instead, we'll return information about whether the credentials are configured
-      // in the frontend environment
+      // in the server environment
 
       const TWITTER_API_KEY = process.env.VITE_TWITTER_API_KEY;
       const TWITTER_API_SECRET = process.env.VITE_TWITTER_API_SECRET;

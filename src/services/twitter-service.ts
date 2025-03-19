@@ -2,20 +2,9 @@ import { useToast } from "@/components/ui/use-toast";
 import { createTwitterClient } from "./twitter-api-browser";
 import { MockTwitterApi } from "./mock-twitter-service";
 
-// Twitter API credentials from environment variables
-const TWITTER_API_KEY = import.meta.env.VITE_TWITTER_API_KEY;
-const TWITTER_API_SECRET = import.meta.env.VITE_TWITTER_API_SECRET;
-const TWITTER_ACCESS_TOKEN = import.meta.env.VITE_TWITTER_ACCESS_TOKEN;
-const TWITTER_ACCESS_TOKEN_SECRET = import.meta.env
-  .VITE_TWITTER_ACCESS_TOKEN_SECRET;
-
-// Check if Twitter credentials are configured
-const isTwitterConfigured = !!(
-  TWITTER_API_KEY &&
-  TWITTER_API_SECRET &&
-  TWITTER_ACCESS_TOKEN &&
-  TWITTER_ACCESS_TOKEN_SECRET
-);
+// We'll rely on the server-side status check instead of client-side env vars
+// This will be determined by the useTwitterCredentials hook
+const isTwitterConfigured = true; // Default value, will be overridden
 
 // Create Twitter client if credentials are available
 let twitterClient = null;

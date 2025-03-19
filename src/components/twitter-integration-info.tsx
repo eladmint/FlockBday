@@ -3,9 +3,8 @@ import { AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { TwitterStatusIndicator } from "./twitter-status-indicator";
 
-// Check if Twitter credentials are configured
-const TWITTER_API_KEY = import.meta.env.VITE_TWITTER_API_KEY;
-const isTwitterConfigured = !!TWITTER_API_KEY;
+// We'll rely on the server-side status check instead of client-side env vars
+const isTwitterConfigured = true; // This will be overridden by the hook
 
 export function TwitterIntegrationInfo() {
   return (

@@ -101,11 +101,12 @@ export function createTwitterClient(credentials?: {
     });
   }
 
-  // Otherwise, use environment variables
-  const apiKey = import.meta.env.VITE_TWITTER_API_KEY;
-  const apiSecret = import.meta.env.VITE_TWITTER_API_SECRET;
-  const accessToken = import.meta.env.VITE_TWITTER_ACCESS_TOKEN;
-  const accessTokenSecret = import.meta.env.VITE_TWITTER_ACCESS_TOKEN_SECRET;
+  // We'll use empty values and rely on the server-side implementation
+  // The actual API calls will be handled by Convex
+  const apiKey = "";
+  const apiSecret = "";
+  const accessToken = "";
+  const accessTokenSecret = "";
 
   // Check if credentials exist
   if (!apiKey || !apiSecret || !accessToken || !accessTokenSecret) {
