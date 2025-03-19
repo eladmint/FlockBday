@@ -1,6 +1,7 @@
 // Browser-compatible Twitter API client
 // This file provides a safe implementation for browser environments
 // that redirects actual API calls to our Convex backend
+import { MockTwitterApi } from "./mock-twitter-service";
 
 export class TwitterApiBrowser {
   private appKey: string;
@@ -63,9 +64,7 @@ export async function createTwitterClient(credentials?: {
 }) {
   // Check if we should use mock implementation
   if (import.meta.env.VITE_USE_MOCK_TWITTER === "true") {
-    // Import dynamically to avoid bundling issues
-    const { MockTwitterApi } = require("./mock-twitter-service");
-
+    // Use mock implementation without require
     if (credentials) {
       return new MockTwitterApi({
         appKey: credentials.apiKey,
@@ -120,7 +119,7 @@ export async function createTwitterClient(credentials?: {
       console.warn(
         "Twitter API credentials not configured on server, using mock implementation",
       );
-      const { MockTwitterApi } = require("./mock-twitter-service");
+      // Use MockTwitterApi directly without require
       return new MockTwitterApi({
         appKey: "mock-key",
         appSecret: "mock-secret",
@@ -131,7 +130,7 @@ export async function createTwitterClient(credentials?: {
   } catch (error) {
     console.error("Error checking server credentials:", error);
     console.warn("Falling back to mock implementation");
-    const { MockTwitterApi } = require("./mock-twitter-service");
+    // Use MockTwitterApi directly without require
     return new MockTwitterApi({
       appKey: "mock-key",
       appSecret: "mock-secret",
