@@ -9,17 +9,20 @@ export async function testTwitterIntegration(campaignId: string) {
   console.log("🧪 Starting Twitter integration test...");
   const results = {
     success: false,
-    steps: [] as Array<{ step: string; success: boolean; message: string }>,
+    tests: [] as Array<{ name: string; success: boolean; message: string }>,
     errors: [] as string[],
   };
 
   try {
     // Step 1: Check Twitter status
     console.log("Step 1: Checking Twitter account status...");
-    const twitterStatus = await api.twitter.getTwitterStatus.query();
+    const { ConvexClient } = await import("convex/browser");
+    const client = new ConvexClient(import.meta.env.VITE_CONVEX_URL);
 
-    results.steps.push({
-      step: "Check Twitter account status",
+    const twitterStatus = await client.query(api.twitter.getTwitterStatus);
+
+    results.tests.push({
+      name: "Check Twitter account status",
       success: twitterStatus.connected,
       message: twitterStatus.connected
         ? `Connected as @${twitterStatus.username}`
@@ -35,13 +38,15 @@ export async function testTwitterIntegration(campaignId: string) {
 
     // Step 2: Check campaign Twitter status
     console.log("Step 2: Checking campaign Twitter status...");
-    const campaignTwitterStatus =
-      await api.twitter.getCampaignTwitterStatus.query({
+    const campaignTwitterStatus = await client.query(
+      api.twitter.getCampaignTwitterStatus,
+      {
         campaignId,
-      });
+      },
+    );
 
-    results.steps.push({
-      step: "Check campaign Twitter status",
+    results.tests.push({
+      name: "Check campaign Twitter status",
       success: campaignTwitterStatus.enabled,
       message: campaignTwitterStatus.enabled
         ? "Twitter is enabled for this campaign"
@@ -52,13 +57,15 @@ export async function testTwitterIntegration(campaignId: string) {
     if (!campaignTwitterStatus.enabled) {
       console.log("Step 3: Enabling Twitter for campaign...");
       try {
-        const enableResult =
-          await api.twitter.enableTwitterForCampaign.mutation({
+        const enableResult = await client.mutation(
+          api.twitter.enableTwitterForCampaign,
+          {
             campaignId,
-          });
+          },
+        );
 
-        results.steps.push({
-          step: "Enable Twitter for campaign",
+        results.tests.push({
+          name: "Enable Twitter for campaign",
           success: enableResult.success,
           message: enableResult.success
             ? "Successfully enabled Twitter for campaign"
@@ -67,8 +74,8 @@ export async function testTwitterIntegration(campaignId: string) {
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-        results.steps.push({
-          step: "Enable Twitter for campaign",
+        results.tests.push({
+          name: "Enable Twitter for campaign",
           success: false,
           message: `Error: ${errorMessage}`,
         });
@@ -80,7 +87,7 @@ export async function testTwitterIntegration(campaignId: string) {
     console.log("Step 4: Creating a test post...");
     let postId;
     try {
-      postId = await api.posts.createPost.mutation({
+      postId = await client.mutation(api.posts.createPost, {
         campaignId,
         title: "Twitter Integration Test",
         content:
@@ -89,8 +96,8 @@ export async function testTwitterIntegration(campaignId: string) {
         status: "draft",
       });
 
-      results.steps.push({
-        step: "Create test post",
+      results.tests.push({
+        name: "Create test post",
         success: !!postId,
         message: postId
           ? `Created post with ID: ${postId}`
@@ -99,8 +106,8 @@ export async function testTwitterIntegration(campaignId: string) {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      results.steps.push({
-        step: "Create test post",
+      results.tests.push({
+        name: "Create test post",
         success: false,
         message: `Error: ${errorMessage}`,
       });
@@ -114,12 +121,12 @@ export async function testTwitterIntegration(campaignId: string) {
     if (postId) {
       console.log("Step 5: Publishing post to Twitter...");
       try {
-        const publishResult = await api.posts.publishToTwitter.mutation({
+        const publishResult = await client.mutation(api.posts.publishToTwitter, {
           postId: convexIdToString(postId)
         });
 
-        results.steps.push({
-          step: "Publish to Twitter",
+        results.tests.push({
+          name: "Publish to Twitter",
           success: publishResult.success,
           message: publishResult.success 
             ? `Successfully published to Twitter with tweet ID: ${publishResult.tweetId}` 
@@ -127,8 +134,8 @@ export async function testTwitterIntegration(campaignId: string) {
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        results.steps.push({
-          step: "Publish to Twitter",
+        results.tests.push({
+          name: "Publish to Twitter",
           success: false,
           message: `Error: ${errorMessage}`
         });

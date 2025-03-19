@@ -4,6 +4,13 @@ import { api } from "../../convex/_generated/api";
 /**
  * Hook to check if Twitter credentials are properly configured
  * This hook relies on server-side status checks rather than client-side environment variables
+ *
+ * The hook returns:
+ * - isConfigured: Whether Twitter API credentials are configured on the server
+ * - isConnected: Whether the user has connected their Twitter account
+ * - username: The connected Twitter username (if available)
+ * - profileImageUrl: The Twitter profile image URL (if available)
+ * - serverConfig: The full server configuration object
  */
 export function useTwitterCredentials() {
   // Query Twitter status from Convex
@@ -21,6 +28,7 @@ export function useTwitterCredentials() {
   if (twitterStatus === undefined || serverConfig === undefined) {
     return {
       isConfigured: false,
+      isConnected: false,
       isLoading: true,
       error: null,
       username: null,

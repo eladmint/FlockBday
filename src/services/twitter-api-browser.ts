@@ -3,6 +3,13 @@
 // that redirects actual API calls to our Convex backend
 import { MockTwitterApi } from "./mock-twitter-service";
 
+/**
+ * TwitterApiBrowser class
+ *
+ * This class provides a browser-safe implementation of the Twitter API client.
+ * Instead of making direct API calls, it redirects them to the Convex backend.
+ * This approach ensures that sensitive API credentials are never exposed to the client.
+ */
 export class TwitterApiBrowser {
   private appKey: string;
   private appSecret: string;
@@ -55,43 +62,25 @@ export class TwitterApiBrowser {
   };
 }
 
-// Factory function that mimics the original but returns our browser-compatible version
+/**
+ * createTwitterClient function
+ *
+ * This factory function creates a Twitter API client for browser environments.
+ * It checks if Twitter credentials are configured on the server and returns
+ * either a real client that uses server-side credentials or a mock client.
+ *
+ * @param credentials Optional credentials to use instead of server-side credentials
+ * @returns A Twitter API client instance
+ */
 export async function createTwitterClient(credentials?: {
   apiKey: string;
   apiSecret: string;
   accessToken: string;
   accessTokenSecret: string;
 }) {
-  // Check if we should use mock implementation
-  if (import.meta.env.VITE_USE_MOCK_TWITTER === "true") {
-    // Use mock implementation without require
-    if (credentials) {
-      return new MockTwitterApi({
-        appKey: credentials.apiKey,
-        appSecret: credentials.apiSecret,
-        accessToken: credentials.accessToken,
-        accessSecret: credentials.accessTokenSecret,
-      });
-    }
-
-    // Use environment variables for mock
-    const apiKey = import.meta.env.VITE_TWITTER_API_KEY || "mock-key";
-    const apiSecret = import.meta.env.VITE_TWITTER_API_SECRET || "mock-secret";
-    const accessToken =
-      import.meta.env.VITE_TWITTER_ACCESS_TOKEN || "mock-token";
-    const accessTokenSecret =
-      import.meta.env.VITE_TWITTER_ACCESS_TOKEN_SECRET || "mock-token-secret";
-
-    return new MockTwitterApi({
-      appKey: apiKey,
-      appSecret: apiSecret,
-      accessToken: accessToken,
-      accessSecret: accessTokenSecret,
-    });
-  }
-
   // If credentials are explicitly provided, use those
   if (credentials) {
+    console.log("Using provided Twitter credentials");
     return new TwitterApiBrowser({
       appKey: credentials.apiKey,
       appSecret: credentials.apiSecret,
@@ -101,9 +90,14 @@ export async function createTwitterClient(credentials?: {
   }
 
   try {
-    // Check if credentials are configured on the server
+    // Check if credentials are configured on the server using ConvexClient
+    // This approach works outside of React components
     const { api } = await import("../../convex/_generated/api");
-    const serverConfig = await api.twitterStatus.isConfigured.query();
+    const { ConvexClient } = await import("convex/browser");
+
+    // Create a temporary client for direct queries
+    const client = new ConvexClient(import.meta.env.VITE_CONVEX_URL);
+    const serverConfig = await client.query(api.twitterStatus.isConfigured);
 
     // If server has credentials configured, use placeholder values that indicate
     // we should use the server-side implementation
@@ -119,7 +113,7 @@ export async function createTwitterClient(credentials?: {
       console.warn(
         "Twitter API credentials not configured on server, using mock implementation",
       );
-      // Use MockTwitterApi directly without require
+      // Use MockTwitterApi for development/testing
       return new MockTwitterApi({
         appKey: "mock-key",
         appSecret: "mock-secret",
@@ -130,7 +124,7 @@ export async function createTwitterClient(credentials?: {
   } catch (error) {
     console.error("Error checking server credentials:", error);
     console.warn("Falling back to mock implementation");
-    // Use MockTwitterApi directly without require
+    // Use MockTwitterApi as fallback
     return new MockTwitterApi({
       appKey: "mock-key",
       appSecret: "mock-secret",
