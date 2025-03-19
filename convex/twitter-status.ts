@@ -15,12 +15,20 @@ export const isConfigured = query({
   args: {},
   handler: async (ctx) => {
     try {
+      console.log("Environment variables check in isConfigured:", process.env);
+
       // Check if Twitter API credentials are configured
-      const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
-      const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
-      const TWITTER_ACCESS_TOKEN = process.env.TWITTER_ACCESS_TOKEN;
+      // Try both naming conventions (with and without VITE_ prefix)
+      const TWITTER_API_KEY =
+        process.env.TWITTER_API_KEY || process.env.VITE_TWITTER_API_KEY;
+      const TWITTER_API_SECRET =
+        process.env.TWITTER_API_SECRET || process.env.VITE_TWITTER_API_SECRET;
+      const TWITTER_ACCESS_TOKEN =
+        process.env.TWITTER_ACCESS_TOKEN ||
+        process.env.VITE_TWITTER_ACCESS_TOKEN;
       const TWITTER_ACCESS_TOKEN_SECRET =
-        process.env.TWITTER_ACCESS_TOKEN_SECRET;
+        process.env.TWITTER_ACCESS_TOKEN_SECRET ||
+        process.env.VITE_TWITTER_ACCESS_TOKEN_SECRET;
 
       // Log the check for debugging
       console.log("Server-side Twitter credential check in isConfigured:");

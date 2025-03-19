@@ -15,7 +15,22 @@ import { api } from "../../convex/_generated/api";
 export function useTwitterCredentials() {
   // Query Twitter status from Convex
   const twitterStatus = useQuery(api.twitter.getTwitterStatus);
-  const serverConfig = useQuery(api.twitterStatus.isConfigured);
+  const serverConfig = useQuery(api.twitterStatus.isConfigured, {
+    // Add onError handler to gracefully handle server errors
+    onError: (error) => {
+      console.error("Error fetching Twitter configuration:", error);
+      return {
+        configured: false,
+        error: String(error),
+        credentials: {
+          apiKeyExists: false,
+          apiSecretExists: false,
+          accessTokenExists: false,
+          accessTokenSecretExists: false,
+        },
+      };
+    },
+  });
 
   // Handle loading state and errors gracefully
   if (twitterStatus === undefined || serverConfig === undefined) {

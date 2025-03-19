@@ -89,6 +89,14 @@ export default function TwitterTestInstructions() {
                   token secret
                 </li>
               </ul>
+              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p className="text-sm text-yellow-800">
+                  <strong>Note:</strong> Make sure these variables are added to
+                  your Convex deployment environment variables. The system will
+                  also check for variables with the <code>VITE_</code> prefix if
+                  the standard names are not found.
+                </p>
+              </div>
             </li>
           </ol>
         </div>

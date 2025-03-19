@@ -100,7 +100,7 @@ export async function createTwitterClient(credentials?: {
 
     // If server has credentials configured, use placeholder values that indicate
     // we should use the server-side implementation
-    if (serverConfig.configured) {
+    if (serverConfig?.configured) {
       console.log("Using server-configured Twitter credentials");
       return new TwitterApiBrowser({
         appKey: "server-configured",

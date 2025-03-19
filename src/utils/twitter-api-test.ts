@@ -26,7 +26,23 @@ export async function testTwitterIntegration() {
 
     // Check server-side configuration status
     console.log("Checking Twitter credentials in Convex...");
-    const serverConfig = await client.query(api.twitterStatus.isConfigured);
+    let serverConfig;
+    try {
+      serverConfig = await client.query(api.twitterStatus.isConfigured);
+      console.log("Server config response:", serverConfig);
+    } catch (error) {
+      console.error("Error querying Twitter status:", error);
+      serverConfig = {
+        configured: false,
+        error: String(error),
+        credentials: {
+          apiKeyExists: false,
+          apiSecretExists: false,
+          accessTokenExists: false,
+          accessTokenSecretExists: false,
+        },
+      };
+    }
 
     console.log(
       "Twitter API Key exists:",
