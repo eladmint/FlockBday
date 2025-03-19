@@ -1,43 +1,44 @@
 import { Campaign } from "@/types/campaign";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileText, Calendar, TrendingUp } from "lucide-react";
 
 interface CampaignTabsProps {
+  postsTab: React.ReactNode;
+  scheduledTab: React.ReactNode;
+  metricsTab?: React.ReactNode;
   campaign: Campaign;
 }
 
 /**
  * Shared component for displaying campaign navigation tabs
  */
-export function CampaignTabs({ campaign }: CampaignTabsProps) {
+export function CampaignTabs({
+  postsTab,
+  scheduledTab,
+  metricsTab,
+  campaign,
+}: CampaignTabsProps) {
   return (
-    <div className="border-b border-gray-200 mb-6">
-      <nav className="-mb-px flex space-x-8">
-        <a
-          href="#"
-          className="border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-        >
+    <Tabs defaultValue="posts" className="w-full">
+      <TabsList className="mb-4">
+        <TabsTrigger value="posts" className="flex items-center">
+          <FileText className="h-4 w-4 mr-2" />
           Posts
-        </a>
-        <a
-          href="#"
-          className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-        >
-          Collaborators
-        </a>
-        <a
-          href="#"
-          className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-        >
-          Analytics
-        </a>
-        {campaign.isOwner && (
-          <a
-            href="#"
-            className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-          >
-            Settings
-          </a>
+        </TabsTrigger>
+        <TabsTrigger value="scheduled" className="flex items-center">
+          <Calendar className="h-4 w-4 mr-2" />
+          Scheduled
+        </TabsTrigger>
+        {metricsTab && (
+          <TabsTrigger value="metrics" className="flex items-center">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Metrics
+          </TabsTrigger>
         )}
-      </nav>
-    </div>
+      </TabsList>
+      <TabsContent value="posts">{postsTab}</TabsContent>
+      <TabsContent value="scheduled">{scheduledTab}</TabsContent>
+      {metricsTab && <TabsContent value="metrics">{metricsTab}</TabsContent>}
+    </Tabs>
   );
 }
