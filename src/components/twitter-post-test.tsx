@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useToast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function TwitterPostTest() {
   const [tweetContent, setTweetContent] = useState("");
@@ -13,7 +14,17 @@ export function TwitterPostTest() {
     message: string;
   } | null>(null);
   const postTweet = useMutation(api.twitter.postTweet);
+  const twitterStatus = useQuery(api.twitter.getTwitterStatus);
   const { toast } = useToast();
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // If we have a connected Twitter account, get the user ID
+    if (twitterStatus?.connected) {
+      // In a real app, you'd get this from auth
+      setUserId("mock-user-id");
+    }
+  }, [twitterStatus]);
 
   const handlePostTweet = async () => {
     if (!tweetContent.trim()) {
@@ -29,10 +40,16 @@ export function TwitterPostTest() {
     setResult(null);
 
     try {
-      // Add the missing userId parameter which is required by the API
+      if (!userId) {
+        throw new Error(
+          "User ID is not available. Please ensure you're connected to Twitter.",
+        );
+      }
+
+      // Use the userId from state
       const response = await postTweet({
         content: tweetContent,
-        userId: "mock-user-id", // Using a mock ID for testing purposes
+        userId: userId,
       });
 
       setResult({
@@ -69,30 +86,47 @@ export function TwitterPostTest() {
         Twitter posting functionality works.
       </p>
 
-      <Textarea
-        value={tweetContent}
-        onChange={(e) => setTweetContent(e.target.value)}
-        placeholder="What's happening?"
-        className="min-h-[100px]"
-        maxLength={280}
-      />
-      <div className="flex justify-between items-center">
-        <span className="text-xs text-gray-500">
-          {tweetContent.length}/280 characters
-        </span>
-        <Button
-          onClick={handlePostTweet}
-          disabled={isPosting || !tweetContent.trim()}
+      {twitterStatus && !twitterStatus.connected && (
+        <Alert
+          variant="destructive"
+          className="bg-amber-50 text-amber-800 border-amber-200"
         >
-          {isPosting ? "Posting..." : "Post Test Tweet"}
-        </Button>
-      </div>
+          <AlertDescription>
+            You need to connect to Twitter before testing the posting
+            functionality. Please check your Convex configuration and ensure you
+            have the proper credentials set up.
+          </AlertDescription>
+        </Alert>
+      )}
 
-      {result && (
-        <div
-          className={`mt-4 p-3 rounded-md ${result.success ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}
-        >
-          <p className="text-sm">{result.message}</p>
+      {twitterStatus && twitterStatus.connected && (
+        <div>
+          <Textarea
+            value={tweetContent}
+            onChange={(e) => setTweetContent(e.target.value)}
+            placeholder="What's happening?"
+            className="min-h-[100px]"
+            maxLength={280}
+          />
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-gray-500">
+              {tweetContent.length}/280 characters
+            </span>
+            <Button
+              onClick={handlePostTweet}
+              disabled={isPosting || !tweetContent.trim()}
+            >
+              {isPosting ? "Posting..." : "Post Test Tweet"}
+            </Button>
+          </div>
+
+          {result && (
+            <div
+              className={`mt-4 p-3 rounded-md ${result.success ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}
+            >
+              <p className="text-sm">{result.message}</p>
+            </div>
+          )}
         </div>
       )}
     </div>
